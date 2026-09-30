@@ -45,7 +45,7 @@ Solange `contact.formEndpoint` `null` ist, läuft das Formular im **Demo-Modus**
 
 ## Datenschutz & Vertrauen
 
-Keine Tracker, keine Cookies, keine externen Schriften oder Einbettungen. Die Schriften (Bricolage Grotesque, Instrument Sans – SIL Open Font License, bezogen über Fontsource) liegen in `public/fonts/` samt Lizenztexten. Alle Illustrationen sind eigene SVG- bzw. CSS-Grafiken.
+Keine Tracker, keine Cookies, keine externen Schriften oder Einbettungen. Die Schriften (Schibsted Grotesk, Instrument Sans – SIL Open Font License, bezogen über Fontsource) liegen in `public/fonts/` samt Lizenztexten. Alle Illustrationen sind eigene SVG- bzw. CSS-Grafiken.
 
 ## Offene Punkte vor Veröffentlichung
 
