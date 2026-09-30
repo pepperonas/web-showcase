@@ -1,0 +1,245 @@
+---
+import DemoFrame from './DemoFrame.astro';
+
+const situations = [
+  { id: 'angestellt', label: 'Angestellt' },
+  { id: 'selbststaendig', label: 'Selbstständig / freiberuflich' },
+  { id: 'vermietung', label: 'Einkünfte aus Vermietung' },
+  { id: 'gmbh', label: 'GmbH oder UG' },
+];
+
+// Unterlagen je Situation – allgemeine Beispiele, keine Steuerberatung.
+const docs: { group: string; items: string[] }[] = [
+  { group: 'basis', items: ['Steuer-Identifikationsnummer', 'Letzter Steuerbescheid'] },
+  { group: 'angestellt', items: ['Lohnsteuerbescheinigung', 'Belege zu Werbungskosten (z. B. Arbeitsmittel, Fortbildung)'] },
+  { group: 'selbststaendig', items: ['Belege zu Einnahmen und Ausgaben', 'Kontoauszüge des Geschäftskontos', 'Bisherige Umsatzsteuer-Voranmeldungen, falls vorhanden'] },
+  { group: 'vermietung', items: ['Mietverträge', 'Nebenkostenabrechnungen', 'Zinsbescheinigung zum Darlehen'] },
+  { group: 'gmbh', items: ['Gesellschaftsvertrag', 'Letzter Jahresabschluss', 'Zugang zur laufenden Buchhaltung'] },
+];
+---
+
+<DemoFrame
+  id="steuerberatung"
+  domain="ostwald-steuer.example"
+  name="Ostwald Steuerberatung"
+  views={[{ id: 'anfrage', label: 'Mandatsanfrage' }, { id: 'liste', label: 'Checkliste' }]}
+>
+  <p slot="brand" class="st-brand">Ostwald<span>Steuerberatung</span></p>
+
+  <div data-view="anfrage" class="st-request">
+    <p class="st-intro">
+      <strong>Neu bei uns?</strong> Sagen Sie uns kurz, was auf Sie zutrifft. Wir zeigen Ihnen, welche Unterlagen Sie
+      zum ersten Termin mitbringen.
+    </p>
+    <fieldset>
+      <legend class="d-label" tabindex="-1" data-view-focus>Was trifft auf Sie zu? (Mehrfachauswahl)</legend>
+      <div class="d-chips" data-st-situations>
+        {situations.map((s, i) => (
+          <label class="d-check"><input type="checkbox" name="situation" value={s.id} checked={i === 0} /><span class="d-chip">{s.label}</span></label>
+        ))}
+      </div>
+    </fieldset>
+    <p class="d-error" data-st-error hidden>Bitte wählen Sie mindestens einen Punkt aus.</p>
+    <button type="button" class="d-btn" data-st-show>Meine Checkliste anzeigen →</button>
+  </div>
+
+  <div data-view="liste" class="st-list">
+    <div class="st-progress" tabindex="-1" data-view-focus>
+      <p><strong data-st-done>0</strong> von <strong data-st-total>4</strong> Unterlagen bereit</p>
+      <div class="st-bar" role="progressbar" aria-label="Unterlagen bereit" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" data-st-bar>
+        <span></span>
+      </div>
+    </div>
+    <ul class="st-docs" data-st-docs>
+      {docs.map((d) =>
+        d.items.map((item) => (
+          <li data-group={d.group} hidden={!['basis', 'angestellt'].includes(d.group)}>
+            <label>
+              <input type="checkbox" />
+              <span>{item}</span>
+            </label>
+          </li>
+        )),
+      )}
+    </ul>
+    <p class="d-sim" data-st-complete hidden>
+      <span class="d-sim__title">Alles beisammen</span>
+      <span>Im Echtbetrieb könnten die Unterlagen jetzt über einen verschlüsselten Upload übermittelt werden. In dieser Demo wird nichts hochgeladen.</span>
+    </p>
+    <p class="d-muted">Beispielhafte Liste. Welche Unterlagen im Einzelfall nötig sind, klärt die Kanzlei.</p>
+  </div>
+</DemoFrame>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-demo="steuerberatung"]');
+  if (root) {
+    const sit = root.querySelector<HTMLElement>('[data-st-situations]')!;
+    const items = [...root.querySelectorAll<HTMLLIElement>('[data-st-docs] li')];
+    const doneEl = root.querySelector<HTMLElement>('[data-st-done]')!;
+    const totalEl = root.querySelector<HTMLElement>('[data-st-total]')!;
+    const bar = root.querySelector<HTMLElement>('[data-st-bar]')!;
+    const complete = root.querySelector<HTMLElement>('[data-st-complete]')!;
+    const error = root.querySelector<HTMLElement>('[data-st-error]')!;
+
+    const selectedGroups = () => [
+      'basis',
+      ...[...sit.querySelectorAll<HTMLInputElement>('input:checked')].map((i) => i.value),
+    ];
+
+    const progress = () => {
+      const visible = items.filter((i) => !i.hidden);
+      const done = visible.filter((i) => i.querySelector<HTMLInputElement>('input')!.checked).length;
+      doneEl.textContent = String(done);
+      totalEl.textContent = String(visible.length);
+      bar.setAttribute('aria-valuemax', String(visible.length));
+      bar.setAttribute('aria-valuenow', String(done));
+      bar.style.setProperty('--p', String(visible.length ? done / visible.length : 0));
+      complete.hidden = done !== visible.length || visible.length === 0;
+    };
+
+    const applyGroups = () => {
+      const groups = selectedGroups();
+      items.forEach((i) => (i.hidden = !groups.includes(i.dataset.group!)));
+      progress();
+    };
+
+    sit.addEventListener('change', () => {
+      error.hidden = selectedGroups().length > 1;
+      applyGroups();
+    });
+
+    root.querySelector('[data-st-show]')!.addEventListener('click', () => {
+      if (selectedGroups().length < 2) {
+        error.hidden = false;
+        return;
+      }
+      applyGroups();
+      root.dispatchEvent(new CustomEvent('demo:view', { detail: 'liste' }));
+    });
+
+    root.querySelector('[data-st-docs]')!.addEventListener('change', progress);
+    applyGroups();
+  }
+</script>
+
+<style>
+  [data-demo='steuerberatung'] {
+    --d-bg: #f6f8f5;
+    --d-fg: #1d2e28;
+    --d-muted: #52635c;
+    --d-line: #cfdad3;
+    --d-accent: #2f5d50;
+    --d-accent-fg: #fff;
+    --d-soft: #e8efea;
+  }
+
+  .st-brand {
+    display: grid;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--d-accent);
+  }
+
+  .st-brand span {
+    font-family: var(--font-text);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--d-muted);
+    margin-top: 0.3rem;
+  }
+
+  .st-request,
+  .st-list {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+
+  .st-intro {
+    font-size: 0.9375rem;
+    max-width: 30rem;
+    padding-left: 0.9rem;
+    border-left: 3px solid var(--d-accent);
+  }
+
+  .st-request fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .st-request legend {
+    padding: 0;
+  }
+
+  .st-progress {
+    width: 100%;
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+  }
+
+  .st-progress:focus {
+    outline: none;
+  }
+
+  .st-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--d-line);
+    overflow: hidden;
+  }
+
+  .st-bar span {
+    display: block;
+    height: 100%;
+    background: var(--d-accent);
+    transform-origin: left;
+    transform: scaleX(var(--p, 0));
+    transition: transform var(--dur-mid) var(--ease-out);
+  }
+
+  .st-docs {
+    list-style: none;
+    width: 100%;
+    display: grid;
+    border-top: 1px solid var(--d-line);
+  }
+
+  .st-docs li {
+    border-bottom: 1px solid var(--d-line);
+  }
+
+  .st-docs label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.9rem;
+    padding: 0.35rem 0.1rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  .st-docs input {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--d-accent);
+  }
+
+  .st-docs input:checked + span {
+    color: var(--d-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--d-accent);
+  }
+
+  .st-list .d-sim {
+    width: 100%;
+  }
+</style>

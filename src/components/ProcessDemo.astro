@@ -1,0 +1,510 @@
+---
+const steps = [
+  { title: 'Anfrage', saved: 'Die Anfrage kommt wie gewohnt per E-Mail oder Formular.' },
+  { title: 'Erfassung', saved: 'Entfällt: Angaben abtippen und in Ihr System übertragen.' },
+  { title: 'Zuordnung', saved: 'Entfällt: Weiterleiten und klären, wer zuständig ist.' },
+  { title: 'Antwortentwurf', saved: 'Entfällt: Antwort von Grund auf formulieren. Sie prüfen und senden selbst.' },
+];
+---
+
+<section class="process section" id="ablauf" aria-labelledby="ablauf-title">
+  <div class="container">
+    <header class="process__head" data-reveal>
+      <p class="eyebrow"><span class="eyebrow__index">03</span> Ablauf-Demo</p>
+      <h2 id="ablauf-title" class="process__title">Vom Posteingang zum Antwortentwurf.</h2>
+      <p class="lead">
+        So kann eine Automatisierung im Hintergrund arbeiten. Gehen Sie den Ablauf Schritt für Schritt durch – und sehen
+        Sie, welcher Handgriff jeweils entfällt.
+      </p>
+    </header>
+
+    <div class="machine registered" data-machine data-step="4" data-reveal>
+      <div class="machine__top">
+        <span class="demo-badge">Beispieldemo · fiktive Daten</span>
+        <div class="machine__controls" data-controls hidden>
+          <button type="button" class="btn btn--ghost machine__btn" data-prev>← Zurück</button>
+          <button type="button" class="btn machine__btn" data-play>
+            <span data-play-label>Ablauf starten</span>
+          </button>
+          <button type="button" class="btn btn--ghost machine__btn" data-next>Weiter →</button>
+        </div>
+      </div>
+
+      <ol class="machine__steps">
+        {steps.map((s, i) => (
+          <li data-stage={i + 1}>
+            <button type="button" data-goto={i + 1} aria-label={`Schritt ${i + 1}: ${s.title}`}>
+              <span class="machine__num">{i + 1}</span>
+              <span class="machine__name">{s.title}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <p class="machine__saved" aria-live="polite" data-saved>{steps[3].saved}</p>
+
+      <div class="machine__stage">
+        <article class="mail" aria-label="Eingehende E-Mail (fiktiv)">
+          <p class="mail__meta"><span>Von</span> Sabine K. (fiktiv)</p>
+          <p class="mail__meta"><span>Betreff</span> Wasserfleck an der Decke</p>
+          <div class="mail__body">
+            <p>Guten Tag,</p>
+            <p>
+              seit gestern haben wir einen <mark data-k="a">Wasserfleck an der Küchendecke</mark>, direkt unter dem
+              <mark data-k="o">Bad im 1. OG</mark>. <mark data-k="d">Der Fleck wird größer.</mark> Können Sie
+              <mark data-k="t">diese Woche noch vorbeikommen</mark>? Adresse:
+              <mark data-k="o">Lindenstraße 12, Musterstadt</mark>. <mark data-k="f">Zwei Fotos</mark> hänge ich an.
+            </p>
+            <p>Viele Grüße<br />Sabine K.</p>
+          </div>
+        </article>
+
+        <div class="machine__outputs">
+          <section class="out" data-min="2" aria-label="Strukturierte Erfassung">
+            <h3 class="out__title"><span>2</span> Erfasst</h3>
+            <dl class="out__fields">
+              <div><dt>Anliegen</dt><dd>Wasserschaden, Verdacht auf Leck</dd></div>
+              <div><dt>Ort</dt><dd>Bad 1. OG / Küchendecke · Lindenstraße 12</dd></div>
+              <div><dt>Dringlichkeit</dt><dd>Hoch – Schaden wächst</dd></div>
+              <div><dt>Wunschtermin</dt><dd>Diese Woche</dd></div>
+              <div><dt>Anhänge</dt><dd>2 Fotos</dd></div>
+            </dl>
+            <p class="out__placeholder" aria-hidden="true">wartet auf Schritt 2</p>
+          </section>
+
+          <section class="out" data-min="3" aria-label="Zuordnung">
+            <h3 class="out__title"><span>3</span> Zugeordnet</h3>
+            <p class="out__assign">
+              <span class="out__chip out__chip--prio">Priorität hoch</span>
+              <span class="out__chip">Team Sanitär</span>
+              <span class="out__chip">Terminvorschlag: Mi, 8–10 Uhr</span>
+            </p>
+            <p class="out__placeholder" aria-hidden="true">wartet auf Schritt 3</p>
+          </section>
+
+          <section class="out out--draft" data-min="4" aria-label="Antwortentwurf">
+            <h3 class="out__title"><span>4</span> Antwortentwurf</h3>
+            <div class="out__draft">
+              <p>Guten Tag Frau K.,</p>
+              <p>
+                danke für Ihre Nachricht und die Fotos. Wir kommen am Mittwoch zwischen 8 und 10 Uhr vorbei. Falls der
+                Fleck bis dahin schnell wächst, schließen Sie bitte vorsorglich das Absperrventil fürs Bad.
+              </p>
+            </div>
+            <p class="out__note">Entwurf – wird geprüft und freigegeben. Nichts geht automatisch raus.</p>
+            <p class="out__placeholder" aria-hidden="true">wartet auf Schritt 4</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const saved = [
+    'Die Anfrage kommt wie gewohnt per E-Mail oder Formular.',
+    'Entfällt: Angaben abtippen und in Ihr System übertragen.',
+    'Entfällt: Weiterleiten und klären, wer zuständig ist.',
+    'Entfällt: Antwort von Grund auf formulieren. Sie prüfen und senden selbst.',
+  ];
+
+  const m = document.querySelector<HTMLElement>('[data-machine]');
+  if (m) {
+    const controls = m.querySelector<HTMLElement>('[data-controls]')!;
+    const prev = m.querySelector<HTMLButtonElement>('[data-prev]')!;
+    const next = m.querySelector<HTMLButtonElement>('[data-next]')!;
+    const play = m.querySelector<HTMLButtonElement>('[data-play]')!;
+    const playLabel = m.querySelector<HTMLElement>('[data-play-label]')!;
+    const savedEl = m.querySelector<HTMLElement>('[data-saved]')!;
+    const stepBtns = [...m.querySelectorAll<HTMLButtonElement>('[data-goto]')];
+    let step = 1;
+    let timer: number | undefined;
+
+    const set = (n: number) => {
+      step = Math.max(1, Math.min(4, n));
+      m.dataset.step = String(step);
+      stepBtns.forEach((b) => {
+        const s = Number(b.dataset.goto);
+        if (s === step) b.setAttribute('aria-current', 'step');
+        else b.removeAttribute('aria-current');
+      });
+      savedEl.textContent = saved[step - 1];
+      prev.disabled = step === 1;
+      next.disabled = step === 4;
+    };
+
+    const stop = () => {
+      window.clearInterval(timer);
+      timer = undefined;
+      playLabel.textContent = step === 4 ? 'Erneut abspielen' : 'Ablauf starten';
+      play.removeAttribute('aria-pressed');
+    };
+
+    play.addEventListener('click', () => {
+      if (timer) return stop();
+      if (step === 4) set(1);
+      playLabel.textContent = 'Anhalten';
+      play.setAttribute('aria-pressed', 'true');
+      timer = window.setInterval(() => {
+        if (step >= 4) return stop();
+        set(step + 1);
+        if (step === 4) stop();
+      }, 1800);
+    });
+    prev.addEventListener('click', () => {
+      stop();
+      set(step - 1);
+    });
+    next.addEventListener('click', () => {
+      stop();
+      set(step + 1);
+    });
+    stepBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        stop();
+        set(Number(b.dataset.goto));
+      }),
+    );
+
+    controls.hidden = false;
+    set(1);
+    stop();
+  }
+</script>
+
+<style>
+  .process {
+    background: var(--paper-2);
+  }
+
+  .process__head {
+    display: grid;
+    gap: var(--space-5);
+    margin-bottom: var(--space-7);
+  }
+
+  .process__title {
+    font-size: var(--fs-2xl);
+    max-width: 16ch;
+  }
+
+  .machine {
+    padding: clamp(1rem, 0.5rem + 2vw, 2rem);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .machine__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .machine__top .demo-badge {
+    color: var(--signal-ink);
+  }
+
+  .machine__controls:not([hidden]) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .machine__btn {
+    min-height: 2.75rem;
+  }
+
+  .machine__btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .machine__steps {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .machine__steps button {
+    width: 100%;
+    display: grid;
+    justify-items: start;
+    gap: 0.35rem;
+    min-height: 3.5rem;
+    padding: 0.6rem 0.2rem 0.5rem;
+    border: 0;
+    border-top: 3px solid var(--line);
+    background: transparent;
+    text-align: left;
+    color: var(--text-muted);
+    transition: border-color var(--dur-mid) linear, color var(--dur-mid) linear;
+  }
+
+  .machine__num {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    transition: background-color var(--dur-mid) linear, color var(--dur-mid) linear;
+  }
+
+  .machine__name {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  /* Erreichte Schritte */
+  .machine[data-step='1'] [data-stage='1'] button,
+  .machine[data-step='2'] :is([data-stage='1'], [data-stage='2']) button,
+  .machine[data-step='3'] :is([data-stage='1'], [data-stage='2'], [data-stage='3']) button,
+  .machine[data-step='4'] [data-stage] button {
+    border-top-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .machine__steps button[aria-current='step'] {
+    border-top-color: var(--signal);
+  }
+
+  .machine__steps button[aria-current='step'] .machine__num {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .machine__saved {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 3rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--ink);
+    color: var(--on-dark);
+    border-radius: var(--radius-m);
+    font-weight: 600;
+    font-size: var(--fs-sm);
+  }
+
+  .machine__saved::before {
+    content: '';
+    flex: none;
+    width: 0.6rem;
+    height: 0.6rem;
+    background: var(--signal);
+  }
+
+  .machine__stage {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 56em) {
+    .machine__stage {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      align-items: start;
+    }
+  }
+
+  .mail {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    padding: var(--space-5);
+    display: grid;
+    gap: 0.35rem;
+    font-size: var(--fs-sm);
+  }
+
+  .mail__meta {
+    display: flex;
+    gap: 0.75rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--paper-2);
+  }
+
+  .mail__meta span {
+    width: 3.75rem;
+    flex: none;
+    color: var(--text-muted);
+  }
+
+  .mail__body {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.6rem;
+    line-height: 1.65;
+  }
+
+  mark {
+    background: transparent;
+    color: inherit;
+    border-radius: 2px;
+    transition: background-color var(--dur-mid) linear, box-shadow var(--dur-mid) linear;
+  }
+
+  .machine:not([data-step='1']) mark {
+    background: var(--signal-soft);
+    box-shadow: inset 0 -2px 0 var(--signal);
+  }
+
+  .machine__outputs {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .out {
+    position: relative;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: #fff;
+    display: grid;
+    gap: var(--space-3);
+    transition: opacity var(--dur-mid) linear, border-color var(--dur-mid) linear;
+  }
+
+  .out__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-text);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .out__title span {
+    display: grid;
+    place-items: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+  }
+
+  .out__fields {
+    margin: 0;
+    display: grid;
+    font-size: var(--fs-sm);
+  }
+
+  .out__fields div {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--paper-2);
+  }
+
+  .out__fields dt {
+    color: var(--text-muted);
+  }
+
+  .out__fields dd {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .out__assign {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .out__chip {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .out__chip--prio {
+    background: var(--signal-ink);
+    border-color: var(--signal-ink);
+    color: #fff;
+  }
+
+  .out__draft {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.75rem 0.9rem;
+    background: var(--paper);
+    border-radius: var(--radius-s);
+    font-size: var(--fs-sm);
+  }
+
+  .out__note {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--ok);
+  }
+
+  .out__placeholder {
+    display: none;
+  }
+
+  /* Noch nicht erreichte Ausgaben: Platzhalter mit gleicher Höhe (keine Layoutsprünge) */
+  .machine[data-step='1'] .out,
+  .machine[data-step='2'] .out[data-min='3'],
+  .machine[data-step='2'] .out[data-min='4'],
+  .machine[data-step='3'] .out[data-min='4'] {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  .machine[data-step='1'] .out > :not(.out__placeholder),
+  .machine[data-step='2'] .out:is([data-min='3'], [data-min='4']) > :not(.out__placeholder),
+  .machine[data-step='3'] .out[data-min='4'] > :not(.out__placeholder) {
+    visibility: hidden;
+  }
+
+  .machine[data-step='1'] .out__placeholder,
+  .machine[data-step='2'] .out:is([data-min='3'], [data-min='4']) .out__placeholder,
+  .machine[data-step='3'] .out[data-min='4'] .out__placeholder {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    inset: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .machine[data-step='2'] .out[data-min='2'],
+    .machine[data-step='3'] .out[data-min='3'],
+    .machine[data-step='4'] .out[data-min='4'] {
+      animation: out-in 560ms var(--ease-out);
+    }
+    .machine[data-step='2'] .out[data-min='2'] .out__fields div {
+      animation: out-in 480ms var(--ease-out) backwards;
+    }
+    .machine[data-step='2'] .out__fields div:nth-child(2) { animation-delay: 70ms; }
+    .machine[data-step='2'] .out__fields div:nth-child(3) { animation-delay: 140ms; }
+    .machine[data-step='2'] .out__fields div:nth-child(4) { animation-delay: 210ms; }
+    .machine[data-step='2'] .out__fields div:nth-child(5) { animation-delay: 280ms; }
+  }
+
+  @keyframes out-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+</style>

@@ -1,0 +1,159 @@
+---
+const steps = [
+  {
+    title: 'Bedarf verstehen',
+    text: 'Wir sprechen über Ihren Betrieb, Ihre Abläufe und das, was heute Zeit kostet. Gern auch vor Ort.',
+  },
+  {
+    title: 'Lösung entwerfen',
+    text: 'Sie erhalten einen konkreten Vorschlag mit Umfang, Aufwand und Reihenfolge – verständlich, ohne Fachchinesisch.',
+  },
+  {
+    title: 'Umsetzen und prüfen',
+    text: 'Umsetzung in überschaubaren Etappen. Sie sehen Zwischenstände früh und geben Rückmeldung, bevor etwas live geht.',
+  },
+  {
+    title: 'Betreuen und weiterentwickeln',
+    text: 'Updates, Sicherheit und Änderungen bleiben in einer Hand. Erweiterungen folgen, wenn Ihr Betrieb sie braucht.',
+  },
+];
+
+const principles = [
+  { title: 'Direkt', text: 'Eine feste Ansprechperson – vom ersten Gespräch bis zur Betreuung.' },
+  { title: 'Verständlich', text: 'Entscheidungen werden erklärt, nicht mit Fachbegriffen verdeckt.' },
+  { title: 'Passend', text: 'Umfang und Budget richten sich nach Ihrem Betrieb, nicht nach einem Paket.' },
+];
+---
+
+<section class="collab section" id="vorgehen" aria-labelledby="vorgehen-title">
+  <div class="container">
+    <header class="collab__head" data-reveal>
+      <p class="eyebrow"><span class="eyebrow__index">04</span> Zusammenarbeit</p>
+      <h2 id="vorgehen-title" class="collab__title">Klar im Ablauf. Direkt in der Abstimmung.</h2>
+    </header>
+
+    <ol class="collab__steps">
+      {steps.map((s, i) => (
+        <li data-reveal style={`--reveal-delay:${i * 80}ms`}>
+          <span class="collab__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <h3>{s.title}</h3>
+          <p>{s.text}</p>
+        </li>
+      ))}
+    </ol>
+
+    <ul class="collab__principles" data-reveal>
+      {principles.map((p) => (
+        <li>
+          <strong>{p.title}</strong>
+          <span>{p.text}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .collab__head {
+    display: grid;
+    gap: var(--space-5);
+    margin-bottom: var(--space-8);
+  }
+
+  .collab__title {
+    font-size: var(--fs-2xl);
+    max-width: 16ch;
+  }
+
+  .collab__steps {
+    list-style: none;
+    display: grid;
+    gap: var(--space-6);
+    counter-reset: s;
+  }
+
+  @media (min-width: 48em) {
+    .collab__steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-7) var(--space-6);
+    }
+  }
+
+  @media (min-width: 72em) {
+    .collab__steps {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .collab__steps li {
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--ink);
+  }
+
+  /* Verbindungspunkt auf der Linie */
+  .collab__steps li::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 0;
+    width: 9px;
+    height: 9px;
+    background: var(--signal);
+  }
+
+  .collab__num {
+    font-family: var(--font-display);
+    font-size: var(--fs-lg);
+    font-weight: 300;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .collab__steps h3 {
+    font-size: var(--fs-md);
+    line-height: 1.2;
+  }
+
+  .collab__steps p {
+    color: var(--text-muted);
+  }
+
+  .collab__principles {
+    list-style: none;
+    margin-top: var(--space-8);
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    overflow: hidden;
+  }
+
+  @media (min-width: 48em) {
+    .collab__principles {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .collab__principles li {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    background: var(--paper);
+  }
+
+  .collab__principles strong {
+    font-family: var(--font-display);
+    font-size: var(--fs-lg);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  .collab__principles span {
+    color: var(--text-muted);
+  }
+</style>

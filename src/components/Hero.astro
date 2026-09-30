@@ -1,0 +1,157 @@
+---
+import HeroDemo from './HeroDemo.astro';
+import { site } from '../config/site';
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container hero__inner">
+    <div class="hero__copy">
+      <p class="hero__claim">{site.claim}</p>
+      <h1 id="hero-title" class="hero__title">
+        <span>Ein starker Auftritt.</span>
+        <span>Einfachere Abläufe.</span>
+        <span class="hero__title-accent">Mehr Zeit fürs Geschäft.</span>
+      </h1>
+      <p class="hero__lead">
+        celox entwickelt Websites, individuelle Software und Automatisierungen für kleine und
+        mittlere Unternehmen. Damit Anfragen vollständig ankommen, Routinearbeit wegfällt und Ihr
+        Betrieb online so gut wirkt, wie er arbeitet.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--signal" href="#kontakt">
+          Projekt besprechen <span class="btn__arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="btn btn--ghost" href="#branchen">Branchenbeispiele ansehen</a>
+      </div>
+      <p class="hero__note">Unverbindliches Erstgespräch · eine feste Ansprechperson</p>
+    </div>
+
+    <div class="hero__demo">
+      <HeroDemo />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: clamp(2.5rem, 1.5rem + 4vw, 5.5rem) var(--space-9);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* Feines Raster im Stil eines Konstruktionsplans */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(to right, rgb(21 23 28 / 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(21 23 28 / 0.055) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: center top;
+    mask-image: linear-gradient(to bottom, #000 40%, transparent 95%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 95%);
+  }
+
+  .hero__inner {
+    display: grid;
+    gap: var(--space-8);
+    align-items: center;
+  }
+
+  @media (min-width: 72em) {
+    .hero__inner {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      gap: var(--space-8);
+    }
+  }
+
+  .hero__claim {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: var(--space-5);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .hero__claim::before {
+    content: '';
+    width: 0.6rem;
+    height: 0.6rem;
+    background: var(--signal);
+  }
+
+  .hero__title {
+    font-size: var(--fs-hero);
+    font-weight: 680;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    font-variation-settings: 'opsz' 72;
+  }
+
+  .hero__title span {
+    display: block;
+  }
+
+  .hero__title-accent {
+    color: var(--signal-ink);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__title span {
+      animation: rise 900ms var(--ease-out) backwards;
+    }
+    .hero__title span:nth-child(2) {
+      animation-delay: 90ms;
+    }
+    .hero__title span:nth-child(3) {
+      animation-delay: 180ms;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.35em);
+    }
+  }
+
+  @media (min-width: 40em) and (max-width: 71.99em) {
+    .hero__demo {
+      max-width: 52rem;
+    }
+  }
+
+  .hero__lead {
+    margin-top: var(--space-5);
+    font-size: var(--fs-md);
+    line-height: 1.55;
+    color: var(--text-muted);
+    max-width: 34rem;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+
+  .hero__note {
+    margin-top: var(--space-4);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 30em) {
+    .hero__actions .btn {
+      flex: 1 1 100%;
+    }
+  }
+</style>

@@ -1,0 +1,67 @@
+---
+import Wordmark from './Wordmark.astro';
+import { site } from '../config/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer on-dark">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <Wordmark />
+      <p>{site.claim}</p>
+    </div>
+    <nav aria-label="Rechtliches">
+      <ul class="footer__links">
+        <li><a href="/impressum">Impressum</a></li>
+        <li><a href="/datenschutz">Datenschutz</a></li>
+      </ul>
+    </nav>
+    <p class="footer__copy">© {year} {site.owner} | {site.domainLabel}</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--on-dark-line);
+    padding-block: var(--space-7) max(var(--space-7), env(safe-area-inset-bottom));
+  }
+
+  .footer__inner {
+    display: grid;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  @media (min-width: 48em) {
+    .footer__inner {
+      grid-template-columns: 1fr auto auto;
+      gap: var(--space-7);
+    }
+  }
+
+  .footer__brand {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .footer__brand p,
+  .footer__copy {
+    font-size: var(--fs-sm);
+    color: var(--on-dark-muted);
+  }
+
+  .footer__links {
+    list-style: none;
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .footer__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: 0.5rem;
+    font-size: var(--fs-sm);
+  }
+</style>

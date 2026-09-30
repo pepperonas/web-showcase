@@ -1,0 +1,453 @@
+---
+import { industries, industryIds } from '../data/industries';
+import HandwerkDemo from './demos/HandwerkDemo.astro';
+import ImmobilienDemo from './demos/ImmobilienDemo.astro';
+import SteuerDemo from './demos/SteuerDemo.astro';
+import KanzleiDemo from './demos/KanzleiDemo.astro';
+import WerkstattDemo from './demos/WerkstattDemo.astro';
+import RestaurantDemo from './demos/RestaurantDemo.astro';
+
+const demos = {
+  handwerk: HandwerkDemo,
+  immobilien: ImmobilienDemo,
+  steuerberatung: SteuerDemo,
+  kanzlei: KanzleiDemo,
+  werkstatt: WerkstattDemo,
+  restaurant: RestaurantDemo,
+};
+
+// Einfache Piktogramme (24×24, Linie) je Branche
+const icons: Record<string, string> = {
+  handwerk: '<path d="M4 20 14 10M13 5l6 6-3 3-6-6zM13 5l2-2 6 6-2 2"/>',
+  immobilien: '<path d="M3 11 12 4l9 7M5 10v10h14V10M10 20v-6h4v6"/>',
+  steuerberatung: '<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7"/>',
+  kanzlei: '<path d="M12 4v16M5 20h14M5 8h14M7 8l-3 6h6zM17 8l-3 6h6z"/>',
+  werkstatt: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+  restaurant: '<path d="M7 3v8a2 2 0 0 0 2 2v8M7 3v6M11 3v8a2 2 0 0 1-2 2M17 21V3c-2 1-3 4-3 8h3"/>',
+};
+---
+
+<section class="showcase on-dark section" id="branchen" aria-labelledby="branchen-title">
+  <div class="container">
+    <header class="showcase__head" data-reveal>
+      <p class="eyebrow"><span class="eyebrow__index">01</span> Branchenbeispiele</p>
+      <h2 id="branchen-title" class="showcase__title">Wählen Sie Ihre Branche.<br /> Sehen Sie, was möglich ist.</h2>
+      <p class="lead">
+        Sechs Beispiele, sechs fiktive Betriebe – jeweils mit echtem Bedienkonzept. Probieren Sie Filter, Formulare und
+        Terminauswahl direkt aus. Es wird nichts gesendet oder gebucht.
+      </p>
+    </header>
+
+    <div class="showcase__tabs" role="tablist" aria-label="Branche wählen" data-tabs hidden>
+      {industries.map((ind, i) => (
+        <button
+          type="button"
+          role="tab"
+          id={`tab-${ind.id}`}
+          aria-controls={`panel-${ind.id}`}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          tabindex={i === 0 ? 0 : -1}
+          data-tab={ind.id}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={icons[ind.id]} />
+          <span>{ind.label}</span>
+        </button>
+      ))}
+    </div>
+
+    <noscript>
+      <p class="showcase__noscript">Die Beispiele sind interaktiv und benötigen JavaScript. Die Inhalte sind unten dennoch vollständig lesbar.</p>
+    </noscript>
+
+    <div class="showcase__panels">
+      {industries.map((ind, i) => {
+        const Demo = demos[ind.id];
+        return (
+          <div
+            class="panel"
+            role="tabpanel"
+            id={`panel-${ind.id}`}
+            aria-labelledby={`tab-${ind.id}`}
+            data-panel={ind.id}
+            data-active={i === 0 ? '' : undefined}
+          >
+            <div class="panel__intro">
+              <p class="panel__label">
+                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={icons[ind.id]} />
+                {ind.label}
+              </p>
+              <h3 class="panel__headline">{ind.headline}</h3>
+            </div>
+
+            <div class="panel__demo">
+              <Demo />
+            </div>
+
+            <div class="panel__body">
+              <div class="panel__block">
+                <h4>Der Alltag heute</h4>
+                <p>{ind.problem}</p>
+              </div>
+              <div class="panel__block">
+                <h4>Der digitale Weg</h4>
+                <ol class="panel__steps">
+                  {ind.solution.map((s) => <li>{s}</li>)}
+                </ol>
+              </div>
+              <div class="panel__block">
+                <h4>Was Sie davon haben</h4>
+                <ul class="panel__benefits">
+                  {ind.benefits.map((b) => <li>{b}</li>)}
+                </ul>
+              </div>
+              <a class="btn btn--signal panel__cta" href="#kontakt" data-prefill={ind.id}>
+                {ind.cta} <span class="btn__arrow" aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<script is:inline define:vars={{ ids: industryIds }}>
+  // Direktlink ?branche=… vor dem ersten Zeichnen anwenden (nur erlaubte Werte).
+  (function () {
+    var p = new URLSearchParams(location.search).get('branche');
+    if (!p || ids.indexOf(p) === -1) return;
+    document.querySelectorAll('[data-panel]').forEach(function (el) {
+      if (el.getAttribute('data-panel') === p) el.setAttribute('data-active', '');
+      else el.removeAttribute('data-active');
+    });
+  })();
+</script>
+
+<script>
+  import { isIndustryId } from '../data/industries';
+
+  const tablist = document.querySelector<HTMLElement>('[data-tabs]');
+  if (tablist) {
+    tablist.hidden = false;
+    const tabs = [...tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = [...document.querySelectorAll<HTMLElement>('[data-panel]')];
+
+    const activate = (id: string, { focus = false, updateUrl = true } = {}) => {
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === id;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        if (on && focus) t.focus();
+      });
+      panels.forEach((p) => {
+        const on = p.dataset.panel === id;
+        p.toggleAttribute('data-active', on);
+        if (on) {
+          p.classList.remove('is-entering');
+          void p.offsetWidth;
+          p.classList.add('is-entering');
+        }
+      });
+      if (updateUrl) {
+        const url = new URL(location.href);
+        url.searchParams.set('branche', id);
+        history.replaceState(null, '', url);
+      }
+    };
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => activate(t.dataset.tab!));
+      t.addEventListener('keydown', (e) => {
+        const map: Record<string, number> = {
+          ArrowRight: i + 1,
+          ArrowDown: i + 1,
+          ArrowLeft: i - 1,
+          ArrowUp: i - 1,
+          Home: 0,
+          End: tabs.length - 1,
+        };
+        if (!(e.key in map)) return;
+        e.preventDefault();
+        const next = tabs[(map[e.key] + tabs.length) % tabs.length];
+        activate(next.dataset.tab!, { focus: true });
+      });
+    });
+
+    const param = new URLSearchParams(location.search).get('branche');
+    activate(isIndustryId(param) ? param : tabs[0].dataset.tab!, { updateUrl: false });
+    if (isIndustryId(param) && !location.hash) {
+      document.getElementById('branchen')?.scrollIntoView();
+    }
+  }
+</script>
+
+<style>
+  .showcase {
+    overflow: clip;
+  }
+
+  .showcase__head {
+    display: grid;
+    gap: var(--space-5);
+    margin-bottom: var(--space-7);
+  }
+
+  .showcase__title {
+    font-size: var(--fs-2xl);
+    max-width: 18ch;
+  }
+
+  .showcase__tabs:not([hidden]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: var(--space-6);
+  }
+
+  @media (min-width: 36em) {
+    .showcase__tabs:not([hidden]) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64em) {
+    .showcase__tabs:not([hidden]) {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  [role='tab'] {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 3.5rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--on-dark-line);
+    border-radius: var(--radius-m);
+    background: transparent;
+    color: var(--on-dark-muted);
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    text-align: left;
+    transition:
+      color var(--dur-fast) linear,
+      border-color var(--dur-fast) linear,
+      background-color var(--dur-fast) linear;
+  }
+
+  [role='tab'] svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex: none;
+  }
+
+  [role='tab']:hover {
+    color: var(--on-dark);
+    border-color: #5a5f69;
+  }
+
+  [role='tab'][aria-selected='true'] {
+    color: var(--ink);
+    background: var(--paper);
+    border-color: var(--paper);
+  }
+
+  /* Aktiver Zustand zusätzlich zur Farbe: Markierung unten */
+  [role='tab'][aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: -1px;
+    height: 3px;
+    background: var(--signal);
+    border-radius: 3px 3px 0 0;
+  }
+
+  .showcase__noscript {
+    margin-bottom: var(--space-5);
+    color: var(--on-dark-muted);
+  }
+
+  /* Panels: ohne JavaScript alle sichtbar, mit JavaScript nur das aktive */
+  .showcase__panels {
+    display: grid;
+    gap: var(--space-9);
+  }
+
+  :global(.js) .panel:not([data-active]) {
+    display: none;
+  }
+
+  .panel {
+    display: grid;
+    gap: var(--space-6);
+    grid-template-areas:
+      'intro'
+      'demo'
+      'body';
+  }
+
+  @media (min-width: 64em) {
+    .panel {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      grid-template-areas:
+        'intro demo'
+        'body demo';
+      grid-template-rows: auto 1fr;
+      column-gap: var(--space-8);
+      row-gap: var(--space-6);
+      align-items: start;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .panel.is-entering .panel__intro,
+    .panel.is-entering .panel__body {
+      animation: panel-in 520ms var(--ease-out) backwards;
+    }
+    .panel.is-entering .panel__demo {
+      animation: panel-demo-in 620ms var(--ease-out) 60ms backwards;
+    }
+    .panel.is-entering .panel__body {
+      animation-delay: 90ms;
+    }
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  @keyframes panel-demo-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.985);
+    }
+  }
+
+  .panel:focus-visible {
+    outline-offset: 8px;
+  }
+
+  .panel__intro {
+    grid-area: intro;
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .panel__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--signal-on-dark);
+  }
+
+  .panel__label svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .panel__headline {
+    font-size: var(--fs-xl);
+    line-height: 1.08;
+  }
+
+  .panel__demo {
+    grid-area: demo;
+    min-width: 0;
+  }
+
+  .panel__body {
+    grid-area: body;
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+
+  .panel__block {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .panel__block h4 {
+    font-family: var(--font-text);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--on-dark-muted);
+  }
+
+  .panel__block p {
+    color: var(--on-dark);
+  }
+
+  .panel__steps {
+    list-style: none;
+    counter-reset: step;
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .panel__steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 1.75rem 1fr;
+    gap: 0.5rem;
+  }
+
+  .panel__steps li::before {
+    content: counter(step);
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.15rem;
+    border: 1px solid var(--on-dark-line);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--signal-on-dark);
+  }
+
+  .panel__benefits {
+    list-style: none;
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .panel__benefits li {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+
+  .panel__benefits li::before {
+    content: '';
+    width: 0.75rem;
+    height: 0.45rem;
+    margin: 0.45rem 0 0 0.3rem;
+    border-left: 2px solid var(--signal-on-dark);
+    border-bottom: 2px solid var(--signal-on-dark);
+    transform: rotate(-45deg);
+  }
+
+  .panel__cta {
+    margin-top: var(--space-2);
+  }
+
+  @media (max-width: 30em) {
+    .panel__cta {
+      width: 100%;
+    }
+  }
+</style>

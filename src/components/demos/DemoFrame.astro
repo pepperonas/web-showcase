@@ -1,0 +1,372 @@
+---
+// Gemeinsamer Rahmen aller Branchen-Demos: Browserleiste, Demo-Kennzeichnung,
+// Ansichtswechsel (data-view) und einheitliche Simulationshinweise.
+interface Props {
+  id: string;
+  domain: string;
+  name: string;
+  views?: { id: string; label: string }[];
+}
+const { id, domain, name, views = [] } = Astro.props;
+---
+
+<div class="demo-frame" data-demo={id} data-demo-frame>
+  <div class="demo-frame__bar">
+    <span class="demo-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="demo-frame__url" aria-hidden="true">{domain}</span>
+    <span class="demo-badge demo-frame__badge">Demo</span>
+  </div>
+  <p class="visually-hidden">Interaktive Demo-Website des fiktiven Betriebs {name}. Es werden keine Daten übertragen.</p>
+
+  <div class="demo-frame__site">
+    <div class="demo-frame__head">
+      <slot name="brand" />
+      {views.length > 1 && (
+        <div class="demo-frame__views" role="group" aria-label={`Bereiche von ${name}`} data-view-group hidden>
+          {views.map((v, i) => (
+            <button type="button" data-view-btn={v.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+    <slot />
+  </div>
+</div>
+
+<script>
+  // Ansichtswechsel innerhalb einer Demo (z. B. „Projekte“ ↔ „Angebot anfragen“)
+  document.querySelectorAll<HTMLElement>('[data-demo-frame]').forEach((frame) => {
+    const group = frame.querySelector<HTMLElement>('[data-view-group]');
+    if (!group) return;
+    group.hidden = false;
+    const buttons = [...group.querySelectorAll<HTMLButtonElement>('[data-view-btn]')];
+    const views = [...frame.querySelectorAll<HTMLElement>('[data-view]')];
+
+    const show = (id: string, focus = false) => {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.viewBtn === id)));
+      views.forEach((v) => {
+        const active = v.dataset.view === id;
+        v.hidden = !active;
+        if (active) {
+          v.classList.remove('is-entering');
+          void v.offsetWidth;
+          v.classList.add('is-entering');
+          if (focus) v.querySelector<HTMLElement>('[data-view-focus]')?.focus();
+        }
+      });
+    };
+
+    buttons.forEach((b) => b.addEventListener('click', () => show(b.dataset.viewBtn!)));
+    // Links innerhalb der Demo, die in eine andere Ansicht springen
+    frame.addEventListener('demo:view', ((e: CustomEvent<string>) => show(e.detail, true)) as EventListener);
+    show(buttons[0].dataset.viewBtn!);
+  });
+</script>
+
+<style>
+  .demo-frame {
+    --d-bg: #fff;
+    --d-fg: #15171c;
+    --d-muted: #5a5f68;
+    --d-line: #e3e0d8;
+    --d-accent: #15171c;
+    --d-accent-fg: #fff;
+    --d-soft: #f4f2ec;
+    background: var(--d-bg);
+    color: var(--d-fg);
+    border-radius: var(--radius-l);
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.06),
+      0 30px 60px -30px rgb(0 0 0 / 0.6);
+  }
+
+  .demo-frame__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.8rem;
+    background: #e9e7e1;
+    color: #45484f;
+    font-size: 0.75rem;
+  }
+
+  .demo-frame__dots {
+    display: flex;
+    gap: 5px;
+  }
+
+  .demo-frame__dots i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #c9c5bb;
+  }
+
+  .demo-frame__url {
+    flex: 1;
+    min-width: 0;
+    padding: 0.2rem 0.6rem;
+    background: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .demo-frame__badge {
+    color: var(--signal-ink);
+    background: #fff;
+  }
+
+  .demo-frame__site {
+    padding: clamp(1rem, 0.7rem + 1.2vw, 1.5rem);
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .demo-frame__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .demo-frame__views:not([hidden]) {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--d-soft);
+    border: 1px solid var(--d-line);
+  }
+
+  .demo-frame__views button {
+    min-height: 2.5rem;
+    padding: 0 0.95rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--d-fg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background-color var(--dur-fast) linear, color var(--dur-fast) linear;
+  }
+
+  .demo-frame__views button[aria-pressed='true'] {
+    background: var(--d-accent);
+    color: var(--d-accent-fg);
+  }
+
+  /* ---- Gemeinsame Bausteine innerhalb der Demos ---- */
+
+  .demo-frame :global([data-view].is-entering) {
+    animation: view-in var(--dur-mid) var(--ease-out);
+  }
+
+  @keyframes view-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  .demo-frame :global(.d-chips) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .demo-frame :global(.d-chip) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.5rem;
+    padding: 0 0.85rem;
+    border: 1px solid var(--d-line);
+    border-radius: 999px;
+    background: var(--d-bg);
+    color: var(--d-fg);
+    font-size: 0.875rem;
+    font-weight: 550;
+    transition: background-color var(--dur-fast) linear, border-color var(--dur-fast) linear, color var(--dur-fast) linear;
+  }
+
+  .demo-frame :global(.d-chip:hover) {
+    border-color: var(--d-accent);
+  }
+
+  .demo-frame :global(.d-chip[aria-pressed='true']),
+  .demo-frame :global(.d-chip[aria-checked='true']),
+  .demo-frame :global(input:checked + .d-chip) {
+    background: var(--d-accent);
+    border-color: var(--d-accent);
+    color: var(--d-accent-fg);
+  }
+
+  .demo-frame :global(.d-chip[aria-pressed='true'])::before,
+  .demo-frame :global(input:checked + .d-chip)::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.28rem;
+    border-left: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-1px) rotate(-45deg);
+  }
+
+  .demo-frame :global(.d-chip:disabled) {
+    opacity: 0.45;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+
+  .demo-frame :global(.d-check) {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .demo-frame :global(.d-check input) {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .demo-frame :global(.d-check input:focus-visible + .d-chip) {
+    outline: 3px solid var(--signal-ink);
+    outline-offset: 2px;
+  }
+
+  .demo-frame :global(.d-label) {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.8125rem;
+    font-weight: 650;
+    color: var(--d-fg);
+  }
+
+  .demo-frame :global(.d-input) {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--d-line);
+    border-radius: 6px;
+    background: #fff;
+    color: #15171c;
+    font-size: 1rem;
+  }
+
+  .demo-frame :global(.d-input:focus-visible) {
+    outline: 3px solid var(--signal-ink);
+    outline-offset: 1px;
+  }
+
+  .demo-frame :global(.d-input[aria-invalid='true']) {
+    border: 2px solid #b03a16;
+  }
+
+  .demo-frame :global(.d-error) {
+    margin-top: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #b03a16;
+  }
+
+  .demo-frame :global(.d-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0 1.1rem;
+    border: 1px solid var(--d-accent);
+    border-radius: 6px;
+    background: var(--d-accent);
+    color: var(--d-accent-fg);
+    font-size: 0.9375rem;
+    font-weight: 650;
+    transition: transform var(--dur-fast) var(--ease-out), filter var(--dur-fast) linear;
+  }
+
+  .demo-frame :global(.d-btn:hover) {
+    filter: brightness(1.12);
+  }
+
+  .demo-frame :global(.d-btn:active) {
+    transform: translateY(1px);
+  }
+
+  .demo-frame :global(.d-btn:disabled) {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .demo-frame :global(.d-btn--ghost) {
+    background: transparent;
+    color: var(--d-fg);
+    border-color: var(--d-line);
+  }
+
+  .demo-frame :global(.d-muted) {
+    color: var(--d-muted);
+    font-size: 0.875rem;
+  }
+
+  /* Ergebnis einer Simulation – immer klar als solche gekennzeichnet */
+  .demo-frame :global(.d-sim) {
+    border: 1px dashed var(--d-accent);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    background: var(--d-soft);
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .demo-frame :global(.d-sim:focus) {
+    outline: 3px solid var(--signal-ink);
+    outline-offset: 2px;
+  }
+
+  .demo-frame :global(.d-sim__title) {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 700;
+  }
+
+  .demo-frame :global(.d-sim__title::before) {
+    content: 'SIMULATION';
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    background: var(--d-fg);
+    color: var(--d-bg);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+  }
+
+  .demo-frame :global(.d-sim dl) {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 0.9rem;
+  }
+
+  .demo-frame :global(.d-sim dt) {
+    color: var(--d-muted);
+  }
+
+  .demo-frame :global(.d-sim dd) {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .demo-frame :global(.d-sim) {
+      animation: view-in var(--dur-mid) var(--ease-out);
+    }
+  }
+</style>

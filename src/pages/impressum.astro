@@ -1,0 +1,37 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { contact, legal } from '../config/site';
+
+const missing = (label: string) => `<span class="missing">[fehlt: ${label}]</span>`;
+---
+
+<Legal title="Impressum">
+  <h2>Angaben gemäß § 5 DDG</h2>
+  <p>
+    {legal.responsible}<br />
+    <Fragment set:html={legal.street ?? missing('Straße und Hausnummer')} /><br />
+    <Fragment set:html={legal.postalCity ?? missing('PLZ und Ort')} /><br />
+    {legal.country}
+  </p>
+
+  <h2>Kontakt</h2>
+  <p>
+    E-Mail: <Fragment set:html={contact.email ?? missing('E-Mail-Adresse')} /><br />
+    Telefon: <Fragment set:html={contact.phone ?? missing('Telefonnummer (optional, aber empfohlen)')} />
+  </p>
+
+  <h2>Umsatzsteuer-ID</h2>
+  <p>
+    Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG:
+    <Fragment set:html={legal.vatId ?? missing('USt-IdNr., falls vorhanden – sonst Abschnitt entfernen')} />
+  </p>
+
+  <h2>Verantwortlich für den Inhalt</h2>
+  <p>{legal.responsible}, Anschrift wie oben.</p>
+
+  <h2>Hinweis zu den Demos</h2>
+  <p>
+    Alle auf dieser Website gezeigten Betriebe, Personen, Preise und Termine in den Beispieldemos sind frei erfunden.
+    Ähnlichkeiten mit tatsächlichen Unternehmen sind nicht beabsichtigt.
+  </p>
+</Legal>

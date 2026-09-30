@@ -1,0 +1,457 @@
+---
+import DemoFrame from './DemoFrame.astro';
+
+type Cat = 'treppe' | 'kueche' | 'einbau';
+const projects: { cat: Cat; title: string; detail: string; wood: string; dark: string }[] = [
+  { cat: 'treppe', title: 'Eichentreppe mit Stahlwange', detail: 'Einfamilienhaus', wood: '#c89a64', dark: '#3b3f45' },
+  { cat: 'kueche', title: 'Küchenfront Esche, grifflos', detail: 'Altbauwohnung', wood: '#dcc39b', dark: '#6b5a44' },
+  { cat: 'einbau', title: 'Schrank unter Dachschräge', detail: 'Ausbau Dachgeschoss', wood: '#b98555', dark: '#5b4028' },
+  { cat: 'treppe', title: 'Faltwerktreppe Nussbaum', detail: 'Neubau', wood: '#7d5537', dark: '#2e2118' },
+  { cat: 'einbau', title: 'Garderobe mit Sitzbank', detail: 'Flur, Maßanfertigung', wood: '#d2ae7f', dark: '#58483a' },
+  { cat: 'kueche', title: 'Kochinsel, Massivholzplatte', detail: 'Wohnküche', wood: '#a8764a', dark: '#2f3337' },
+];
+const cats: { id: 'alle' | Cat; label: string }[] = [
+  { id: 'alle', label: 'Alle' },
+  { id: 'treppe', label: 'Treppen' },
+  { id: 'kueche', label: 'Küchen' },
+  { id: 'einbau', label: 'Einbauten' },
+];
+---
+
+<DemoFrame
+  id="handwerk"
+  domain="holzbau-brenner.example"
+  name="Holzbau Brenner"
+  views={[{ id: 'projekte', label: 'Projekte' }, { id: 'anfrage', label: 'Angebot anfragen' }]}
+>
+  <p slot="brand" class="hw-brand">HOLZBAU <b>BRENNER</b><small>Tischlerei · Treppenbau</small></p>
+
+  <div data-view="projekte" class="hw-projects">
+    <div class="d-chips" role="group" aria-label="Projekte filtern" data-hw-filter>
+      {cats.map((c, i) => (
+        <button type="button" class="d-chip" data-cat={c.id} aria-pressed={i === 0 ? 'true' : 'false'}>{c.label}</button>
+      ))}
+    </div>
+    <p class="d-muted" aria-live="polite" data-hw-count>6 Projekte</p>
+    <ul class="hw-grid">
+      {projects.map((p) => (
+        <li data-cat={p.cat}>
+          <svg viewBox="0 0 160 110" role="img" aria-label={`Illustration: ${p.title}`}>
+            <rect width="160" height="110" fill="#efe6d8" />
+            {p.cat === 'treppe' && (
+              <g>
+                <rect x="0" y="92" width="160" height="18" fill="#e2d6c3" />
+                <path d={`M20 92 ${Array.from({ length: 6 }, () => "h18 v-12").join(' ')} h24`} fill="none" stroke={p.dark} stroke-width="3" />
+                {Array.from({ length: 6 }, (_, s) => (
+                  <rect x={20 + s * 18} y={80 - s * 12} width="20" height="5" fill={p.wood} />
+                ))}
+                <path d="M16 70 L132 0" stroke={p.dark} stroke-width="2" />
+              </g>
+            )}
+            {p.cat === 'kueche' && (
+              <g>
+                <rect x="14" y="16" width="132" height="28" fill={p.wood} />
+                <path d="M58 16v28M102 16v28" stroke="#efe6d8" stroke-width="2" />
+                <rect x="10" y="60" width="140" height="6" fill={p.dark} />
+                <rect x="14" y="66" width="132" height="36" fill={p.wood} />
+                <path d="M47 66v36M80 66v36M113 66v36" stroke="#efe6d8" stroke-width="2" />
+                <circle cx="100" cy="54" r="4" fill={p.dark} opacity=".5" />
+              </g>
+            )}
+            {p.cat === 'einbau' && (
+              <g>
+                <path d="M0 0 L70 0 L160 58 L160 110 L0 110Z" fill="#e7dcca" />
+                <path d="M18 104 V22 H62 L138 72 V104Z" fill={p.wood} />
+                <path d="M62 22 V104 M100 47 V104 M18 60 H62 M62 72 H100 M100 84 H138" stroke={p.dark} stroke-width="2" fill="none" />
+                <path d="M0 0 L70 0 L160 58" stroke={p.dark} stroke-width="2" fill="none" />
+              </g>
+            )}
+          </svg>
+          <p><strong>{p.title}</strong><span>{p.detail}</span></p>
+        </li>
+      ))}
+    </ul>
+    <button type="button" class="d-btn" data-goto="anfrage">Ähnliches Projekt anfragen →</button>
+  </div>
+
+  <div data-view="anfrage" class="hw-request">
+    <ol class="hw-steps" aria-label="Fortschritt" data-hw-progress>
+      <li aria-current="step"><span>1</span> Vorhaben</li>
+      <li><span>2</span> Eckdaten</li>
+      <li><span>3</span> Prüfen</li>
+    </ol>
+
+    <form novalidate data-hw-form>
+      <fieldset data-step="1">
+        <legend class="d-label" tabindex="-1" data-view-focus>Was möchten Sie anfertigen lassen?</legend>
+        <div class="d-chips">
+          {[['treppe', 'Treppe'], ['kueche', 'Küche'], ['einbau', 'Einbauschrank']].map(([v, l], i) => (
+            <label class="d-check"><input type="radio" name="art" value={v} checked={i === 0} /><span class="d-chip">{l}</span></label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset data-step="2" class="hw-fields">
+        <legend class="visually-hidden">Eckdaten</legend>
+        <div>
+          <label class="d-label" for="hw-mass" data-hw-mass-label>Geschosshöhe in cm</label>
+          <input class="d-input" id="hw-mass" name="mass" inputmode="numeric" autocomplete="off" aria-describedby="hw-mass-hint hw-mass-error" />
+          <p class="d-muted" id="hw-mass-hint" data-hw-mass-hint>Von Fußboden zu Fußboden, z. B. 275</p>
+          <p class="d-error" id="hw-mass-error" hidden></p>
+        </div>
+        <div>
+          <label class="d-label" for="hw-zeit">Gewünschter Zeitraum</label>
+          <select class="d-input" id="hw-zeit" name="zeit" aria-describedby="hw-zeit-error">
+            <option value="">Bitte wählen</option>
+            <option>In den nächsten 3 Monaten</option>
+            <option>In 3–6 Monaten</option>
+            <option>Noch offen</option>
+          </select>
+          <p class="d-error" id="hw-zeit-error" hidden></p>
+        </div>
+        <label class="hw-toggle">
+          <input type="checkbox" name="fotos" />
+          <span>Ich habe Fotos oder eine Skizze</span>
+        </label>
+      </fieldset>
+
+      <div data-step="3" class="hw-review" tabindex="-1">
+        <p class="d-label">Ihre Angaben</p>
+        <dl data-hw-summary></dl>
+      </div>
+
+      <div class="hw-nav">
+        <button type="button" class="d-btn d-btn--ghost" data-hw-back hidden>← Zurück</button>
+        <button type="button" class="d-btn" data-hw-next>Weiter</button>
+      </div>
+      <div data-hw-result hidden tabindex="-1" class="d-sim"></div>
+    </form>
+  </div>
+</DemoFrame>
+
+<script>
+  import { dl } from '../../scripts/dom';
+
+  const root = document.querySelector<HTMLElement>('[data-demo="handwerk"]');
+  if (root) {
+    // Projektfilter
+    const filter = root.querySelector<HTMLElement>('[data-hw-filter]')!;
+    const tiles = [...root.querySelectorAll<HTMLElement>('.hw-grid li')];
+    const count = root.querySelector<HTMLElement>('[data-hw-count]')!;
+    filter.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cat]');
+      if (!btn) return;
+      filter.querySelectorAll('[data-cat]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      let n = 0;
+      tiles.forEach((t) => {
+        const show = btn.dataset.cat === 'alle' || t.dataset.cat === btn.dataset.cat;
+        t.hidden = !show;
+        if (show) n++;
+      });
+      count.textContent = `${n} ${n === 1 ? 'Projekt' : 'Projekte'}`;
+    });
+
+    root.querySelector('[data-goto="anfrage"]')?.addEventListener('click', () => {
+      root.dispatchEvent(new CustomEvent('demo:view', { detail: 'anfrage' }));
+    });
+
+    // Angebotsanfrage in drei Schritten
+    const form = root.querySelector<HTMLFormElement>('[data-hw-form]')!;
+    const steps = [...form.querySelectorAll<HTMLElement>('[data-step]')];
+    const progress = [...root.querySelectorAll<HTMLElement>('[data-hw-progress] li')];
+    const back = form.querySelector<HTMLButtonElement>('[data-hw-back]')!;
+    const next = form.querySelector<HTMLButtonElement>('[data-hw-next]')!;
+    const result = form.querySelector<HTMLElement>('[data-hw-result]')!;
+    const mass = form.querySelector<HTMLInputElement>('#hw-mass')!;
+    const zeit = form.querySelector<HTMLSelectElement>('#hw-zeit')!;
+    const massLabel = form.querySelector<HTMLElement>('[data-hw-mass-label]')!;
+    const massHint = form.querySelector<HTMLElement>('[data-hw-mass-hint]')!;
+
+    const massConfig: Record<string, { label: string; hint: string; min: number; max: number; name: string }> = {
+      treppe: { label: 'Geschosshöhe in cm', hint: 'Von Fußboden zu Fußboden, z. B. 275', min: 200, max: 400, name: 'Geschosshöhe' },
+      kueche: { label: 'Raumbreite in cm', hint: 'Längste Wand für die Küchenzeile, z. B. 360', min: 150, max: 1200, name: 'Raumbreite' },
+      einbau: { label: 'Nischenbreite in cm', hint: 'An der breitesten Stelle, z. B. 180', min: 40, max: 800, name: 'Nischenbreite' },
+    };
+    const artLabel: Record<string, string> = { treppe: 'Treppe', kueche: 'Küche', einbau: 'Einbauschrank' };
+
+    let step = 1;
+    const setError = (input: HTMLInputElement | HTMLSelectElement, msg: string) => {
+      const el = form.querySelector<HTMLElement>(`#${input.id}-error`)!;
+      el.textContent = msg;
+      el.hidden = !msg;
+      input.setAttribute('aria-invalid', String(Boolean(msg)));
+    };
+
+    const render = (focus = true) => {
+      steps.forEach((s) => (s.hidden = Number(s.dataset.step) !== step));
+      progress.forEach((p, i) => {
+        p.toggleAttribute('aria-current', i + 1 === step);
+        p.classList.toggle('is-done', i + 1 < step);
+      });
+      back.hidden = step === 1;
+      next.textContent = step === 3 ? 'Anfrage simulieren' : 'Weiter';
+      if (step === 2) {
+        const cfg = massConfig[String(new FormData(form).get('art'))];
+        massLabel.textContent = cfg.label;
+        massHint.textContent = cfg.hint;
+      }
+      if (focus) {
+        const target = step === 1 ? steps[0].querySelector('legend') : step === 2 ? mass : steps[2];
+        (target as HTMLElement | null)?.focus();
+      }
+    };
+
+    const validate = () => {
+      const data = new FormData(form);
+      const cfg = massConfig[String(data.get('art'))];
+      const value = Number(String(data.get('mass')).replace(',', '.'));
+      let ok = true;
+      if (!String(data.get('mass')).trim()) {
+        setError(mass, `Bitte geben Sie die ${cfg.name} an – ein Schätzwert genügt.`);
+        ok = false;
+      } else if (!Number.isFinite(value) || value < cfg.min || value > cfg.max) {
+        setError(mass, `Bitte einen Wert zwischen ${cfg.min} und ${cfg.max} cm eingeben.`);
+        ok = false;
+      } else setError(mass, '');
+      if (!data.get('zeit')) {
+        setError(zeit, 'Bitte wählen Sie einen Zeitraum.');
+        ok = false;
+      } else setError(zeit, '');
+      if (!ok) form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      return ok;
+    };
+
+    const summary = () => {
+      const d = new FormData(form);
+      const art = String(d.get('art'));
+      return [
+        ['Vorhaben', artLabel[art]] as [string, string],
+        [massConfig[art].name, `${d.get('mass')} cm`],
+        ['Zeitraum', String(d.get('zeit'))],
+        ['Fotos/Skizze', d.get('fotos') ? 'vorhanden' : 'nicht vorhanden'],
+      ];
+    };
+
+    next.addEventListener('click', () => {
+      result.hidden = true;
+      if (step === 2 && !validate()) return;
+      if (step === 3) {
+        const d = new FormData(form);
+        result.innerHTML = `<p class="d-sim__title">Anfrage wäre jetzt vollständig</p>
+          <p>In dieser Demo wird nichts gesendet. Im echten Betrieb erhielte Holzbau Brenner eine strukturierte Anfrage${
+            d.get('fotos') ? '' : ' – mit dem Hinweis, dass Fotos per Link nachgereicht werden können'
+          }.</p>`;
+        result.hidden = false;
+        result.focus();
+        return;
+      }
+      step++;
+      if (step === 3) {
+        root.querySelector('[data-hw-summary]')!.outerHTML = dl(summary() as [string, string][]).replace('<dl>', '<dl data-hw-summary>');
+      }
+      render();
+    });
+
+    back.addEventListener('click', () => {
+      result.hidden = true;
+      step--;
+      render();
+    });
+
+    render(false);
+  }
+</script>
+
+<style>
+  [data-demo='handwerk'] {
+    --d-bg: #fbf7f0;
+    --d-fg: #2b1d12;
+    --d-muted: #6a5646;
+    --d-line: #dfd1bd;
+    --d-accent: #7a4a1f;
+    --d-accent-fg: #fff;
+    --d-soft: #f2e9dc;
+  }
+
+  .hw-brand {
+    display: grid;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    font-weight: 400;
+    line-height: 1.1;
+  }
+
+  .hw-brand b {
+    font-weight: 800;
+  }
+
+  .hw-brand small {
+    font-family: var(--font-text);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--d-muted);
+  }
+
+  .hw-projects,
+  .hw-request {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+
+  .hw-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .hw-grid li {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hw-grid li:not([hidden]) {
+      animation: view-in var(--dur-mid) var(--ease-out);
+    }
+  }
+
+  .hw-grid svg {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 11;
+    border-radius: 4px;
+  }
+
+  .hw-grid p {
+    display: grid;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  .hw-grid span {
+    color: var(--d-muted);
+  }
+
+  .hw-steps {
+    list-style: none;
+    display: flex;
+    gap: 0.4rem;
+    width: 100%;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--d-muted);
+  }
+
+  .hw-steps li {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-top: 0.5rem;
+    border-top: 3px solid var(--d-line);
+    transition: border-color var(--dur-mid) linear, color var(--dur-mid) linear;
+  }
+
+  .hw-steps li span {
+    display: grid;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-size: 0.75rem;
+  }
+
+  .hw-steps li[aria-current],
+  .hw-steps li.is-done {
+    border-top-color: var(--d-accent);
+    color: var(--d-fg);
+  }
+
+  .hw-steps li.is-done span {
+    background: var(--d-accent);
+    border-color: var(--d-accent);
+    color: #fff;
+    font-size: 0;
+  }
+
+  .hw-steps li.is-done span::before {
+    content: '✓';
+    font-size: 0.75rem;
+  }
+
+  .hw-request form {
+    display: grid;
+    gap: var(--space-4);
+    width: 100%;
+  }
+
+  .hw-request fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .hw-request legend {
+    padding: 0;
+  }
+
+  .hw-fields:not([hidden]) {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .hw-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  .hw-toggle input {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--d-accent);
+  }
+
+  .hw-review :global(dl) {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .hw-review :global(dt) {
+    color: var(--d-muted);
+  }
+
+  .hw-review :global(dd) {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .hw-review:focus {
+    outline: none;
+  }
+
+  .hw-nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Ohne JavaScript: Formularschritte sichtbar, Navigation ausgeblendet */
+  :global(.no-js) .hw-nav,
+  :global(.no-js) .hw-review {
+    display: none;
+  }
+</style>

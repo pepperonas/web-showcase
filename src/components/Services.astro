@@ -1,0 +1,147 @@
+---
+const services = [
+  {
+    title: 'Websites, die überzeugen und Anfragen erleichtern',
+    text: 'Ein Auftritt, der auf dem Handy genauso gut funktioniert wie am Schreibtisch – schnell, verständlich und so aufgebaut, dass Interessenten die richtigen Angaben gleich mitschicken.',
+    points: ['Klare Struktur und eigene Gestaltung', 'Anfrageformulare, die mitdenken', 'Schnelle Ladezeiten, sauber auffindbar'],
+    exampleTitle: 'Zum Beispiel',
+    example:
+      'Ein Malerbetrieb fragt im Formular Raumgröße, Untergrund und Wunschtermin ab. Der Meister sieht vor dem Rückruf, ob sich ein Besichtigungstermin lohnt.',
+  },
+  {
+    title: 'Individuelle Software für Ihre Abläufe',
+    text: 'Wenn Standardprogramme nicht passen und Excel-Listen an ihre Grenzen kommen: kleine, gezielte Anwendungen, die genau Ihren Ablauf abbilden – nicht mehr und nicht weniger.',
+    points: ['Auftrags- und Terminübersichten', 'Checklisten und Freigaben im Team', 'Zugriff im Browser, auch unterwegs'],
+    exampleTitle: 'Zum Beispiel',
+    example:
+      'Eine Hausverwaltung erfasst Schadensmeldungen per Handy-Formular. Jede Meldung bekommt Fotos, Status und Zuständigkeit – statt Zettel, Anrufen und verstreuter E-Mails.',
+  },
+  {
+    title: 'Automatisierung und sichere Integration',
+    text: 'Vorhandene Programme miteinander verbinden, wiederkehrende Handgriffe automatisieren und Daten dort halten, wo sie hingehören. Sicherheit und Datenschutz sind dabei Teil der Planung, nicht ein Nachtrag.',
+    points: ['Anbindung an vorhandene Software', 'Automatische Weiterleitung und Ablage', 'Verschlüsselung, Rechte, Protokolle'],
+    exampleTitle: 'Zum Beispiel',
+    example:
+      'Eingehende Rechnungen werden aus dem Postfach gelesen, benannt und im richtigen Ordner für die Steuerkanzlei abgelegt. Niemand muss mehr Anhänge von Hand sortieren.',
+  },
+];
+---
+
+<section class="services section" id="leistungen" aria-labelledby="leistungen-title">
+  <div class="container">
+    <header class="services__head" data-reveal>
+      <p class="eyebrow"><span class="eyebrow__index">02</span> Leistungen</p>
+      <h2 id="leistungen-title" class="services__title">Drei Bereiche. Ein Ziel: weniger Aufwand für Sie.</h2>
+    </header>
+
+    <ol class="services__list">
+      {services.map((s, i) => (
+        <li class="service" data-reveal style={`--reveal-delay:${i * 60}ms`}>
+          <span class="service__index" aria-hidden="true">0{i + 1}</span>
+          <div class="service__main">
+            <h3 class="service__title">{s.title}</h3>
+            <p class="service__text">{s.text}</p>
+            <ul class="service__points">
+              {s.points.map((p) => <li>{p}</li>)}
+            </ul>
+          </div>
+          <aside class="service__example" aria-label={`Beispiel: ${s.title}`}>
+            <p class="service__example-title">{s.exampleTitle}</p>
+            <p>{s.example}</p>
+          </aside>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .services__head {
+    display: grid;
+    gap: var(--space-5);
+    margin-bottom: var(--space-8);
+  }
+
+  .services__title {
+    font-size: var(--fs-2xl);
+    max-width: 17ch;
+  }
+
+  .services__list {
+    list-style: none;
+    border-top: 1px solid var(--ink);
+  }
+
+  .service {
+    display: grid;
+    gap: var(--space-5);
+    padding-block: var(--space-7);
+    border-bottom: 1px solid var(--line);
+  }
+
+  @media (min-width: 52em) {
+    .service {
+      grid-template-columns: 5rem minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: var(--space-7);
+    }
+  }
+
+  .service__index {
+    font-family: var(--font-display);
+    font-size: var(--fs-xl);
+    font-weight: 300;
+    line-height: 1;
+    color: var(--signal-ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .service__main {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+  }
+
+  .service__title {
+    font-size: var(--fs-lg);
+    line-height: 1.15;
+    max-width: 24ch;
+  }
+
+  .service__text {
+    color: var(--text-muted);
+    max-width: 40rem;
+  }
+
+  .service__points {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .service__points li {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+  }
+
+  .service__example {
+    align-self: start;
+    position: relative;
+    padding: var(--space-5);
+    background: var(--paper-2);
+    border-left: 3px solid var(--signal);
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .service__example-title {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+</style>

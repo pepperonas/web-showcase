@@ -1,0 +1,346 @@
+---
+import DemoFrame from './DemoFrame.astro';
+
+const objects = [
+  { id: 'o1', type: 'kauf', rooms: 3, area: 84, price: 389000, title: 'Altbau am Stadtpark', extra: 'Balkon · 2. OG' },
+  { id: 'o2', type: 'miete', rooms: 2, area: 58, price: 890, title: 'Dachgeschoss im Nordviertel', extra: 'Einbauküche' },
+  { id: 'o3', type: 'kauf', rooms: 4, area: 128, price: 549000, title: 'Reihenhaus mit Garten', extra: 'Stellplatz' },
+  { id: 'o4', type: 'miete', rooms: 3, area: 76, price: 1180, title: 'Neubau mit Loggia', extra: 'Aufzug · barrierearm' },
+  { id: 'o5', type: 'kauf', rooms: 2, area: 62, price: 259000, title: 'Stadtwohnung, vermietet', extra: 'Kapitalanlage' },
+  { id: 'o6', type: 'miete', rooms: 1, area: 34, price: 520, title: 'Apartment in der Innenstadt', extra: 'Möbliert' },
+];
+
+const fmt = (o: (typeof objects)[number]) =>
+  o.type === 'kauf'
+    ? `${o.price.toLocaleString('de-DE')} €`
+    : `${o.price.toLocaleString('de-DE')} € kalt`;
+
+// Grundriss-Skizze abhängig von der Zimmerzahl
+const plan = (rooms: number) => {
+  const cells: string[] = [];
+  const cols = Math.min(rooms, 2);
+  const rows = Math.ceil(rooms / 2);
+  for (let i = 0; i < rooms; i++) {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    cells.push(`<rect x="${10 + c * (80 / cols)}" y="${10 + r * (50 / rows)}" width="${80 / cols}" height="${50 / rows}" />`);
+  }
+  return cells.join('');
+};
+
+const slots = ['Di · 17:30', 'Do · 18:00', 'Sa · 11:00'];
+---
+
+<DemoFrame
+  id="immobilien"
+  domain="kranich-immobilien.example"
+  name="Kranich Immobilien"
+  views={[{ id: 'objekte', label: 'Objekte' }, { id: 'besichtigung', label: 'Besichtigung' }]}
+>
+  <p slot="brand" class="im-brand"><span aria-hidden="true">◆</span> Kranich <em>Immobilien</em></p>
+
+  <div data-view="objekte" class="im-list">
+    <div class="im-filters" data-im-filters>
+      <div class="im-seg" role="group" aria-label="Vermarktungsart">
+        <button type="button" class="d-chip" data-type="kauf" aria-pressed="true">Kaufen</button>
+        <button type="button" class="d-chip" data-type="miete" aria-pressed="false">Mieten</button>
+      </div>
+      <label class="im-select">
+        <span class="d-label">Zimmer</span>
+        <select class="d-input" data-rooms>
+          <option value="1">ab 1</option>
+          <option value="2">ab 2</option>
+          <option value="3">ab 3</option>
+          <option value="4">ab 4</option>
+        </select>
+      </label>
+      <label class="im-select">
+        <span class="d-label">Preis bis</span>
+        <select class="d-input" data-budget>
+          <option value="300000">300.000 €</option>
+          <option value="400000">400.000 €</option>
+          <option value="600000">600.000 €</option>
+          <option value="0" selected>beliebig</option>
+        </select>
+      </label>
+    </div>
+
+    <p class="d-muted" aria-live="polite" data-im-count>3 passende Objekte</p>
+
+    <ul class="im-cards">
+      {objects.map((o) => (
+        <li data-id={o.id} data-type={o.type} data-rooms={o.rooms} data-price={o.price} hidden={o.type !== 'kauf'}>
+          <svg viewBox="0 0 100 70" aria-hidden="true" class="im-plan">
+            <rect width="100" height="70" fill="#eef1f5" />
+            <g fill="none" stroke="#14233a" stroke-width="1.6" set:html={plan(o.rooms)} />
+          </svg>
+          <div class="im-card__body">
+            <p class="im-card__title">{o.title}</p>
+            <p class="im-card__meta">{o.rooms} Zi. · {o.area} m² · {o.extra}</p>
+            <p class="im-card__price">{fmt(o)}</p>
+          </div>
+          <button type="button" class="d-btn d-btn--ghost im-card__btn" data-visit={o.id} aria-label={`Besichtigung anfragen: ${o.title}`}>
+            Besichtigen
+          </button>
+        </li>
+      ))}
+    </ul>
+    <p class="d-muted" data-im-empty hidden>
+      Kein Objekt passt zu diesen Filtern. Im echten Betrieb könnten Interessenten hier einen Suchauftrag hinterlegen.
+    </p>
+  </div>
+
+  <div data-view="besichtigung" class="im-visit">
+    <p class="im-visit__intro" tabindex="-1" data-view-focus data-im-selected>
+      Wählen Sie zuerst unter „Objekte“ eine Immobilie aus.
+    </p>
+    <fieldset data-im-slots disabled>
+      <legend class="d-label">Freie Besichtigungszeiten</legend>
+      <div class="d-chips">
+        {slots.map((s) => (
+          <label class="d-check"><input type="radio" name="slot" value={s} /><span class="d-chip">{s}</span></label>
+        ))}
+      </div>
+    </fieldset>
+    <button type="button" class="d-btn" data-im-book disabled>Anfrage simulieren</button>
+    <div class="d-sim" data-im-result hidden tabindex="-1"></div>
+  </div>
+</DemoFrame>
+
+<script>
+  import { esc } from '../../scripts/dom';
+
+  const root = document.querySelector<HTMLElement>('[data-demo="immobilien"]');
+  if (root) {
+    const budgets = {
+      kauf: [
+        ['300000', '300.000 €'],
+        ['400000', '400.000 €'],
+        ['600000', '600.000 €'],
+        ['0', 'beliebig'],
+      ],
+      miete: [
+        ['600', '600 €'],
+        ['900', '900 €'],
+        ['1200', '1.200 €'],
+        ['0', 'beliebig'],
+      ],
+    } as const;
+
+    let type: 'kauf' | 'miete' = 'kauf';
+    let selected: HTMLElement | null = null;
+    const typeBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-type]')];
+    const roomsSel = root.querySelector<HTMLSelectElement>('[data-rooms]')!;
+    const budgetSel = root.querySelector<HTMLSelectElement>('[data-budget]')!;
+    const cards = [...root.querySelectorAll<HTMLElement>('.im-cards li')];
+    const count = root.querySelector<HTMLElement>('[data-im-count]')!;
+    const empty = root.querySelector<HTMLElement>('[data-im-empty]')!;
+    const intro = root.querySelector<HTMLElement>('[data-im-selected]')!;
+    const slots = root.querySelector<HTMLFieldSetElement>('[data-im-slots]')!;
+    const book = root.querySelector<HTMLButtonElement>('[data-im-book]')!;
+    const result = root.querySelector<HTMLElement>('[data-im-result]')!;
+
+    const fillBudget = () => {
+      budgetSel.innerHTML = budgets[type].map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+      budgetSel.value = '0';
+    };
+
+    const apply = () => {
+      const minRooms = Number(roomsSel.value);
+      const max = Number(budgetSel.value);
+      let n = 0;
+      cards.forEach((c) => {
+        const show =
+          c.dataset.type === type &&
+          Number(c.dataset.rooms) >= minRooms &&
+          (max === 0 || Number(c.dataset.price) <= max);
+        c.hidden = !show;
+        if (show) n++;
+      });
+      count.textContent = n === 1 ? '1 passendes Objekt' : `${n} passende Objekte`;
+      empty.hidden = n > 0;
+    };
+
+    typeBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        type = b.dataset.type as 'kauf' | 'miete';
+        typeBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        fillBudget();
+        apply();
+      }),
+    );
+    roomsSel.addEventListener('change', apply);
+    budgetSel.addEventListener('change', apply);
+
+    root.querySelector('.im-cards')!.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-visit]');
+      if (!btn) return;
+      selected = btn.closest('li');
+      const title = selected?.querySelector('.im-card__title')?.textContent ?? '';
+      intro.innerHTML = `Besichtigung für <strong>${esc(title)}</strong>`;
+      slots.disabled = false;
+      result.hidden = true;
+      book.disabled = !slots.querySelector('input:checked');
+      root.dispatchEvent(new CustomEvent('demo:view', { detail: 'besichtigung' }));
+    });
+
+    slots.addEventListener('change', () => (book.disabled = false));
+
+    book.addEventListener('click', () => {
+      const slot = slots.querySelector<HTMLInputElement>('input:checked')?.value;
+      if (!selected || !slot) return;
+      const title = selected.querySelector('.im-card__title')?.textContent ?? '';
+      result.innerHTML = `<p class="d-sim__title">Terminanfrage vorbereitet</p>
+        <p><strong>${esc(title)}</strong> · ${esc(slot)}</p>
+        <p>Es wurde nichts gebucht oder gesendet. Im Echtbetrieb würde der Termin reserviert und eine Bestätigung mit Exposé versendet.</p>`;
+      result.hidden = false;
+      result.focus();
+    });
+
+    fillBudget();
+    apply();
+  }
+</script>
+
+<style>
+  [data-demo='immobilien'] {
+    --d-bg: #ffffff;
+    --d-fg: #14233a;
+    --d-muted: #56647a;
+    --d-line: #d9dee6;
+    --d-accent: #14233a;
+    --d-accent-fg: #fff;
+    --d-soft: #f1f4f8;
+  }
+
+  .im-brand {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .im-brand span {
+    color: #a07a3f;
+    font-size: 0.8em;
+  }
+
+  .im-brand em {
+    font-style: normal;
+    font-weight: 300;
+  }
+
+  .im-list,
+  .im-visit {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .im-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    align-items: end;
+  }
+
+  .im-seg {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  @media (min-width: 30em) {
+    .im-filters {
+      grid-template-columns: auto 1fr 1fr;
+    }
+    .im-seg {
+      grid-column: auto;
+    }
+  }
+
+  .im-cards {
+    list-style: none;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .im-cards li {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.4rem 0.9rem;
+    align-items: center;
+    padding: 0.6rem;
+    border: 1px solid var(--d-line);
+    border-radius: 8px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .im-cards li:not([hidden]) {
+      animation: view-in var(--dur-mid) var(--ease-out);
+    }
+  }
+
+  @media (min-width: 34em) {
+    .im-cards li {
+      grid-template-columns: 5.5rem 1fr auto;
+    }
+  }
+
+  .im-plan {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    grid-row: span 2;
+  }
+
+  @media (min-width: 34em) {
+    .im-plan {
+      grid-row: auto;
+    }
+  }
+
+  .im-card__title {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    line-height: 1.3;
+  }
+
+  .im-card__meta {
+    font-size: 0.8125rem;
+    color: var(--d-muted);
+  }
+
+  .im-card__price {
+    font-weight: 700;
+    color: #7a5a24;
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .im-card__btn {
+    justify-self: start;
+  }
+
+  .im-visit fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .im-visit fieldset:disabled {
+    opacity: 0.5;
+  }
+
+  .im-visit legend {
+    padding: 0;
+  }
+
+  .im-visit__intro:focus {
+    outline: none;
+  }
+
+  .im-visit {
+    justify-items: start;
+  }
+</style>

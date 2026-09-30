@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base title="Seite nicht gefunden – celox" noindex>
+  <Header />
+  <main id="inhalt" tabindex="-1" class="nf container">
+    <p class="eyebrow"><span class="eyebrow__index">404</span> Nicht gefunden</p>
+    <h1>Diese Seite gibt es nicht.</h1>
+    <p class="lead">Vielleicht hat sich die Adresse geändert. Auf der Startseite finden Sie alle Inhalte.</p>
+    <a class="btn" href="/">Zur Startseite</a>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .nf {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+    padding-block: var(--space-9);
+    min-height: 60vh;
+    align-content: center;
+  }
+  h1 {
+    font-size: var(--fs-2xl);
+  }
+</style>

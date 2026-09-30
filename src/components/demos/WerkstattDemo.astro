@@ -1,0 +1,310 @@
+---
+import DemoFrame from './DemoFrame.astro';
+
+// Zeitbedarf als Beispielwerte des fiktiven Betriebs
+const services = [
+  { id: 'inspektion', label: 'Inspektion nach Herstellervorgabe', min: 120 },
+  { id: 'reifen', label: 'Reifenwechsel', min: 30 },
+  { id: 'bremsen', label: 'Bremsen prüfen', min: 60 },
+  { id: 'klima', label: 'Klimaservice', min: 60 },
+  { id: 'diagnose', label: 'Fehlerspeicher auslesen', min: 30 },
+];
+---
+
+<DemoFrame
+  id="werkstatt"
+  domain="kfz-albers.example"
+  name="Kfz-Technik Albers"
+  views={[{ id: 'service', label: '1 · Service' }, { id: 'termin', label: '2 · Termin' }]}
+>
+  <p slot="brand" class="ws-brand"><span>ALBERS</span> Kfz-Technik</p>
+
+  <div data-view="service" class="ws-service">
+    <fieldset>
+      <legend class="d-label" tabindex="-1" data-view-focus>Welche Leistungen brauchen Sie?</legend>
+      <ul class="ws-list" data-ws-services>
+        {services.map((s, i) => (
+          <li>
+            <label>
+              <input type="checkbox" value={s.id} data-min={s.min} data-label={s.label} checked={i === 1} />
+              <span class="ws-name">{s.label}</span>
+              <span class="ws-time">ca. {s.min >= 60 ? `${s.min / 60} Std.` : `${s.min} Min.`}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </fieldset>
+    <label class="ws-vehicle">
+      <span class="d-label">Fahrzeugart</span>
+      <select class="d-input" data-ws-vehicle>
+        <option>Pkw</option>
+        <option>SUV / Geländewagen</option>
+        <option>Transporter bis 3,5 t</option>
+      </select>
+    </label>
+    <div class="ws-total">
+      <p>Geschätzter Zeitbedarf: <strong data-ws-total>30 Min.</strong></p>
+      <button type="button" class="d-btn" data-ws-next>Freie Termine anzeigen →</button>
+    </div>
+    <p class="d-error" data-ws-error hidden>Bitte wählen Sie mindestens eine Leistung.</p>
+  </div>
+
+  <div data-view="termin" class="ws-slots">
+    <p class="d-label" tabindex="-1" data-view-focus>Tag wählen</p>
+    <div class="d-chips" role="group" aria-label="Tag" data-ws-days></div>
+    <p class="d-label">Uhrzeit wählen</p>
+    <div class="d-chips" role="group" aria-label="Uhrzeit" data-ws-times></div>
+    <p class="d-muted" data-ws-hint></p>
+    <button type="button" class="d-btn" data-ws-book disabled>Terminanfrage simulieren</button>
+    <div class="d-sim" data-ws-result hidden tabindex="-1"></div>
+  </div>
+</DemoFrame>
+
+<script>
+  import { dl } from '../../scripts/dom';
+
+  const root = document.querySelector<HTMLElement>('[data-demo="werkstatt"]');
+  if (root) {
+    const list = root.querySelector<HTMLElement>('[data-ws-services]')!;
+    const totalEl = root.querySelector<HTMLElement>('[data-ws-total]')!;
+    const error = root.querySelector<HTMLElement>('[data-ws-error]')!;
+    const daysEl = root.querySelector<HTMLElement>('[data-ws-days]')!;
+    const timesEl = root.querySelector<HTMLElement>('[data-ws-times]')!;
+    const hint = root.querySelector<HTMLElement>('[data-ws-hint]')!;
+    const book = root.querySelector<HTMLButtonElement>('[data-ws-book]')!;
+    const result = root.querySelector<HTMLElement>('[data-ws-result]')!;
+    const vehicle = root.querySelector<HTMLSelectElement>('[data-ws-vehicle]')!;
+
+    const checked = () => [...list.querySelectorAll<HTMLInputElement>('input:checked')];
+    const total = () => checked().reduce((s, i) => s + Number(i.dataset.min), 0);
+    const fmtMin = (m: number) =>
+      m < 60 ? `${m} Min.` : `${Math.floor(m / 60)} Std.${m % 60 ? ` ${m % 60} Min.` : ''}`;
+
+    const updateTotal = () => {
+      totalEl.textContent = total() ? fmtMin(total()) : '–';
+      if (total()) error.hidden = true;
+    };
+    list.addEventListener('change', updateTotal);
+
+    // Nächste fünf Werktage – Belegung ist ein festes Beispielmuster.
+    const workdays = () => {
+      const days: Date[] = [];
+      const d = new Date();
+      while (days.length < 5) {
+        d.setDate(d.getDate() + 1);
+        if (d.getDay() !== 0 && d.getDay() !== 6) days.push(new Date(d));
+      }
+      return days;
+    };
+    const starts = ['07:30', '09:00', '10:30', '13:00', '14:30', '16:00'];
+    const closing = 17 * 60 + 30;
+    const busy = (dayIdx: number, slotIdx: number) => (dayIdx * 3 + slotIdx * 5) % 7 === 0;
+    const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+
+    let day = 0;
+    let time = '';
+    const days = workdays();
+
+    const renderDays = () => {
+      daysEl.innerHTML = days
+        .map(
+          (d, i) =>
+            `<button type="button" class="d-chip" data-day="${i}" aria-pressed="${i === day}">${d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' })}</button>`,
+        )
+        .join('');
+    };
+
+    const renderTimes = () => {
+      const need = total();
+      let free = 0;
+      timesEl.innerHTML = starts
+        .map((t, i) => {
+          const ok = !busy(day, i) && toMin(t) + need <= closing;
+          if (ok) free++;
+          const reason = busy(day, i) ? 'belegt' : 'reicht zeitlich nicht';
+          return `<button type="button" class="d-chip" data-time="${t}" aria-pressed="${t === time}" ${ok ? '' : `disabled aria-label="${t} – ${reason}"`}>${t}</button>`;
+        })
+        .join('');
+      hint.textContent = free
+        ? `${free} passende Zeitfenster für ${fmtMin(need)} Arbeitszeit.`
+        : 'An diesem Tag passt kein Zeitfenster – bitte anderen Tag wählen.';
+      book.disabled = !time;
+    };
+
+    root.querySelector('[data-ws-next]')!.addEventListener('click', () => {
+      if (!total()) {
+        error.hidden = false;
+        return;
+      }
+      time = '';
+      result.hidden = true;
+      renderDays();
+      renderTimes();
+      root.dispatchEvent(new CustomEvent('demo:view', { detail: 'termin' }));
+    });
+
+    daysEl.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-day]');
+      if (!b) return;
+      day = Number(b.dataset.day);
+      time = '';
+      result.hidden = true;
+      daysEl.querySelectorAll('[data-day]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderTimes();
+    });
+
+    timesEl.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-time]');
+      if (!b || b.disabled) return;
+      time = b.dataset.time!;
+      timesEl.querySelectorAll('[data-time]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      book.disabled = false;
+    });
+
+    book.addEventListener('click', () => {
+      result.innerHTML = `<p class="d-sim__title">Terminanfrage vorbereitet</p>${dl([
+        ['Termin', `${days[day].toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}, ${time} Uhr`],
+        ['Leistungen', checked().map((i) => i.dataset.label).join(', ')],
+        ['Fahrzeug', vehicle.value],
+        ['Zeitbedarf', fmtMin(total())],
+      ])}<p>Nichts wurde gebucht. Im Echtbetrieb würde der Slot in der Werkstattplanung reserviert.</p>`;
+      result.hidden = false;
+      result.focus();
+    });
+
+    updateTotal();
+    renderDays();
+  }
+</script>
+
+<style>
+  [data-demo='werkstatt'] {
+    --d-bg: #1d2024;
+    --d-fg: #f1f2f3;
+    --d-muted: #b3b8bf;
+    --d-line: #3a3f46;
+    --d-accent: #f2c230;
+    --d-accent-fg: #1d2024;
+    --d-soft: #272b30;
+  }
+
+  .ws-brand {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .ws-brand span {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    margin-right: 0.3rem;
+    background: var(--d-accent);
+    color: var(--d-accent-fg);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    transform: skewX(-8deg);
+  }
+
+  .ws-service,
+  .ws-slots {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+
+  .ws-service fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .ws-service legend {
+    padding: 0;
+  }
+
+  .ws-list {
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .ws-list label {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--d-line);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color var(--dur-fast) linear, background-color var(--dur-fast) linear;
+  }
+
+  .ws-list label:has(input:checked) {
+    border-color: var(--d-accent);
+    background: var(--d-soft);
+  }
+
+  .ws-list input {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--d-accent);
+  }
+
+  .ws-name {
+    font-size: 0.9375rem;
+    font-weight: 550;
+  }
+
+  .ws-time {
+    font-size: 0.8125rem;
+    color: var(--d-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ws-vehicle {
+    width: min(100%, 18rem);
+  }
+
+  .ws-total {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--d-line);
+    font-size: 0.9375rem;
+  }
+
+  .ws-total strong {
+    color: var(--d-accent);
+  }
+
+  .ws-slots .d-label:focus {
+    outline: none;
+  }
+
+  .ws-slots .d-sim {
+    width: 100%;
+  }
+
+  [data-demo='werkstatt'] :global(:focus-visible),
+  [data-demo='werkstatt'] :global(.d-check input:focus-visible + .d-chip) {
+    outline-color: #ffab8a;
+  }
+
+  [data-demo='werkstatt'] :global(.d-error) {
+    color: #ffab8a;
+  }
+
+  [data-demo='werkstatt'] :global(.d-sim__title::before) {
+    background: var(--d-accent);
+    color: var(--d-accent-fg);
+  }
+</style>

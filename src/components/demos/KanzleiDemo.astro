@@ -1,0 +1,384 @@
+---
+import DemoFrame from './DemoFrame.astro';
+
+const areas = [
+  { id: 'arbeit', label: 'Arbeitsrecht', text: 'Kündigung, Abmahnung, Arbeitszeugnis' },
+  { id: 'miete', label: 'Mietrecht', text: 'Nebenkosten, Mängel, Kündigung der Wohnung' },
+  { id: 'familie', label: 'Familienrecht', text: 'Trennung, Unterhalt, Umgang mit Kindern' },
+  { id: 'verkehr', label: 'Verkehrsrecht', text: 'Unfall, Bußgeldbescheid, Führerschein' },
+];
+---
+
+<DemoFrame
+  id="kanzlei"
+  domain="hartmann-vogt.example"
+  name="Hartmann & Vogt Rechtsanwälte"
+  views={[{ id: 'gebiete', label: 'Rechtsgebiete' }, { id: 'anfrage', label: 'Erstanfrage' }]}
+>
+  <p slot="brand" class="kz-brand">Hartmann <span>&amp;</span> Vogt<small>Rechtsanwälte</small></p>
+
+  <div data-view="gebiete" class="kz-areas">
+    <p class="kz-lead">Wobei können wir Ihnen helfen?</p>
+    <ul>
+      {areas.map((a, i) => (
+        <li>
+          <button type="button" data-area={a.id}>
+            <span class="kz-num" aria-hidden="true">0{i + 1}</span>
+            <span class="kz-area">
+              <strong>{a.label}</strong>
+              <span>{a.text}</span>
+            </span>
+            <span class="kz-arrow" aria-hidden="true">→</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <div data-view="anfrage" class="kz-request">
+    <p class="kz-lead" tabindex="-1" data-view-focus data-kz-title>Bitte wählen Sie zuerst ein Rechtsgebiet.</p>
+    <form novalidate data-kz-form hidden>
+      <fieldset>
+        <legend class="d-label">Worum geht es?</legend>
+        <div class="d-chips" data-kz-topics></div>
+      </fieldset>
+      <div data-kz-date hidden>
+        <label class="d-label" for="kz-date" data-kz-date-label></label>
+        <input class="d-input kz-date" type="date" id="kz-date" aria-describedby="kz-date-error" />
+        <p class="d-error" id="kz-date-error" hidden></p>
+      </div>
+      <p class="kz-deadline" data-kz-deadline hidden role="status"></p>
+      <button type="submit" class="d-btn">Ersteinschätzung anfragen</button>
+      <div class="d-sim" data-kz-result hidden tabindex="-1"></div>
+    </form>
+    <p class="d-muted">Demo – keine Rechtsberatung. Fristen vereinfacht berechnet, ohne Feiertage.</p>
+  </div>
+</DemoFrame>
+
+<script>
+  import { dl, esc } from '../../scripts/dom';
+
+  type Topic = { id: string; label: string; deadline?: { label: string; days: number; note: string } };
+  const config: Record<string, { label: string; lawyer: string; topics: Topic[] }> = {
+    arbeit: {
+      label: 'Arbeitsrecht',
+      lawyer: 'RAin Hartmann',
+      topics: [
+        {
+          id: 'kuendigung',
+          label: 'Kündigung erhalten',
+          deadline: {
+            label: 'Wann ist Ihnen die Kündigung zugegangen?',
+            days: 21,
+            note: 'Eine Kündigungsschutzklage muss in der Regel innerhalb von drei Wochen nach Zugang erhoben werden.',
+          },
+        },
+        { id: 'abmahnung', label: 'Abmahnung' },
+        { id: 'zeugnis', label: 'Arbeitszeugnis' },
+      ],
+    },
+    miete: {
+      label: 'Mietrecht',
+      lawyer: 'RA Vogt',
+      topics: [
+        { id: 'nebenkosten', label: 'Nebenkostenabrechnung' },
+        { id: 'maengel', label: 'Mängel in der Wohnung' },
+        { id: 'kuendigung', label: 'Kündigung der Wohnung' },
+      ],
+    },
+    familie: {
+      label: 'Familienrecht',
+      lawyer: 'RAin Hartmann',
+      topics: [
+        { id: 'trennung', label: 'Trennung / Scheidung' },
+        { id: 'unterhalt', label: 'Unterhalt' },
+        { id: 'umgang', label: 'Umgang mit Kindern' },
+      ],
+    },
+    verkehr: {
+      label: 'Verkehrsrecht',
+      lawyer: 'RA Vogt',
+      topics: [
+        { id: 'unfall', label: 'Verkehrsunfall' },
+        {
+          id: 'bussgeld',
+          label: 'Bußgeldbescheid',
+          deadline: {
+            label: 'Wann wurde der Bescheid zugestellt?',
+            days: 14,
+            note: 'Gegen einen Bußgeldbescheid kann in der Regel innerhalb von zwei Wochen nach Zustellung Einspruch eingelegt werden.',
+          },
+        },
+        { id: 'fuehrerschein', label: 'Führerschein' },
+      ],
+    },
+  };
+
+  const root = document.querySelector<HTMLElement>('[data-demo="kanzlei"]');
+  if (root) {
+    const form = root.querySelector<HTMLFormElement>('[data-kz-form]')!;
+    const title = root.querySelector<HTMLElement>('[data-kz-title]')!;
+    const topics = root.querySelector<HTMLElement>('[data-kz-topics]')!;
+    const dateWrap = root.querySelector<HTMLElement>('[data-kz-date]')!;
+    const dateLabel = root.querySelector<HTMLElement>('[data-kz-date-label]')!;
+    const dateInput = root.querySelector<HTMLInputElement>('#kz-date')!;
+    const dateError = root.querySelector<HTMLElement>('#kz-date-error')!;
+    const deadlineEl = root.querySelector<HTMLElement>('[data-kz-deadline]')!;
+    const result = root.querySelector<HTMLElement>('[data-kz-result]')!;
+    let area = '';
+
+    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    dateInput.max = iso(new Date());
+
+    const currentTopic = (): Topic | undefined => {
+      const id = topics.querySelector<HTMLInputElement>('input:checked')?.value;
+      return config[area]?.topics.find((t) => t.id === id);
+    };
+
+    const deadlineFor = (topic: Topic): Date | null => {
+      if (!topic.deadline || !dateInput.value) return null;
+      const d = new Date(`${dateInput.value}T12:00:00`);
+      d.setDate(d.getDate() + topic.deadline.days);
+      // Fällt das Fristende auf ein Wochenende, verschiebt es sich auf Montag.
+      if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+      if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+      return d;
+    };
+
+    const fmt = (d: Date) => d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    const updateTopic = () => {
+      const topic = currentTopic();
+      result.hidden = true;
+      dateWrap.hidden = !topic?.deadline;
+      dateInput.required = Boolean(topic?.deadline);
+      dateError.hidden = true;
+      dateInput.removeAttribute('aria-invalid');
+      if (topic?.deadline) dateLabel.textContent = topic.deadline.label;
+      updateDeadline();
+    };
+
+    const updateDeadline = () => {
+      const topic = currentTopic();
+      const end = topic ? deadlineFor(topic) : null;
+      deadlineEl.hidden = !end;
+      if (topic?.deadline && end) {
+        deadlineEl.innerHTML = `<strong>Fristsache</strong><span>${esc(topic.deadline.note)} Rechnerisches Fristende: <b>${esc(fmt(end))}</b>.</span>`;
+      }
+    };
+
+    const openArea = (id: string) => {
+      area = id;
+      const c = config[id];
+      title.textContent = `Erstanfrage · ${c.label}`;
+      topics.innerHTML = c.topics
+        .map(
+          (t, i) =>
+            `<label class="d-check"><input type="radio" name="topic" value="${t.id}" ${i === 0 ? 'checked' : ''}><span class="d-chip">${esc(t.label)}</span></label>`,
+        )
+        .join('');
+      dateInput.value = '';
+      form.hidden = false;
+      updateTopic();
+      root.dispatchEvent(new CustomEvent('demo:view', { detail: 'anfrage' }));
+    };
+
+    root.querySelectorAll<HTMLButtonElement>('[data-area]').forEach((b) =>
+      b.addEventListener('click', () => openArea(b.dataset.area!)),
+    );
+    topics.addEventListener('change', updateTopic);
+    dateInput.addEventListener('input', () => {
+      dateError.hidden = true;
+      dateInput.removeAttribute('aria-invalid');
+      updateDeadline();
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const topic = currentTopic();
+      if (!topic) return;
+      if (topic.deadline) {
+        const invalid = !dateInput.value || dateInput.value > dateInput.max;
+        if (invalid) {
+          dateError.textContent = !dateInput.value
+            ? 'Bitte geben Sie das Datum an – wir prüfen damit die Frist.'
+            : 'Das Datum liegt in der Zukunft. Bitte prüfen Sie die Angabe.';
+          dateError.hidden = false;
+          dateInput.setAttribute('aria-invalid', 'true');
+          dateInput.focus();
+          return;
+        }
+      }
+      const end = deadlineFor(topic);
+      result.innerHTML = `<p class="d-sim__title">So käme die Anfrage in der Kanzlei an</p>${dl([
+        ['Rechtsgebiet', config[area].label],
+        ['Anliegen', topic.label],
+        ['Priorität', end ? `Fristsache – bis ${fmt(end)}` : 'Regulär'],
+        ['Zuständig', config[area].lawyer],
+      ])}<p>Nichts wurde gesendet. Die Namen sind fiktiv.</p>`;
+      result.hidden = false;
+      result.focus();
+    });
+  }
+</script>
+
+<style>
+  [data-demo='kanzlei'] {
+    --d-bg: #fbf9f7;
+    --d-fg: #2a1a1d;
+    --d-muted: #6b5a5c;
+    --d-line: #e3d8d6;
+    --d-accent: #5a1f2b;
+    --d-accent-fg: #fff;
+    --d-soft: #f4ecea;
+  }
+
+  .kz-brand {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    display: grid;
+    line-height: 1.05;
+  }
+
+  .kz-brand span {
+    color: var(--d-accent);
+    font-weight: 500;
+  }
+
+  .kz-brand small {
+    font-family: var(--font-text);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--d-muted);
+    margin-top: 0.25rem;
+  }
+
+  .kz-lead {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  .kz-lead:focus {
+    outline: none;
+  }
+
+  .kz-areas,
+  .kz-request {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .kz-areas ul {
+    list-style: none;
+    border-top: 1px solid var(--d-line);
+  }
+
+  .kz-areas li {
+    border-bottom: 1px solid var(--d-line);
+  }
+
+  .kz-areas button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 2rem 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3.75rem;
+    padding: 0.6rem 0.25rem;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    color: var(--d-fg);
+    transition: background-color var(--dur-fast) linear;
+  }
+
+  .kz-areas button:hover {
+    background: var(--d-soft);
+  }
+
+  .kz-num {
+    font-size: 0.75rem;
+    color: var(--d-accent);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kz-area {
+    display: grid;
+  }
+
+  .kz-area strong {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+
+  .kz-area span {
+    font-size: 0.8125rem;
+    color: var(--d-muted);
+  }
+
+  .kz-arrow {
+    color: var(--d-accent);
+    transition: transform var(--dur-mid) var(--ease-out);
+  }
+
+  .kz-areas button:hover .kz-arrow {
+    transform: translateX(4px);
+  }
+
+  .kz-request form {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+
+  .kz-request fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .kz-request legend {
+    padding: 0;
+  }
+
+  .kz-date {
+    max-width: 14rem;
+  }
+
+  .kz-deadline:not([hidden]) {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.75rem 0.9rem;
+    border-left: 4px solid var(--d-accent);
+    background: var(--d-soft);
+    font-size: 0.875rem;
+  }
+
+  .kz-deadline :global(strong) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    color: var(--d-accent);
+  }
+
+  .kz-deadline :global(strong)::before {
+    content: '⚑';
+    font-size: 0.9rem;
+  }
+
+  .kz-request .d-sim {
+    width: 100%;
+  }
+</style>

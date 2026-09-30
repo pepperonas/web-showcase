@@ -1,0 +1,37 @@
+---
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<span class:list={['wordmark', className]}>
+  <svg class="wordmark__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <rect width="32" height="32" rx="7" fill="currentColor"></rect>
+    <path d="M20.75 11.18A7.5 7.5 0 1 0 20.75 20.82" fill="none" stroke="var(--mark-fg, #f4f1ea)" stroke-width="4.2"></path>
+    <rect x="20.4" y="13.9" width="4.2" height="4.2" fill="#e4572e"></rect>
+  </svg>
+  <span class="wordmark__text">celox</span>
+</span>
+
+<style>
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.375rem;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .wordmark__mark {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--ink);
+  }
+  :global(.on-dark) .wordmark__mark {
+    color: var(--paper);
+    --mark-fg: var(--ink);
+  }
+</style>

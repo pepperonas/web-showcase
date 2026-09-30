@@ -1,0 +1,73 @@
+---
+import Base from './Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<Base title={`${title} – celox`} description={`${title} von celox.`} noindex>
+  <Header />
+  <main id="inhalt" tabindex="-1" class="legal">
+    <div class="container legal__inner">
+      <p class="legal__draft" role="note">
+        <strong>Entwurf.</strong> Diese Seite ist unvollständig und nicht rechtlich geprüft. Markierte Angaben fehlen noch
+        und müssen vor der Veröffentlichung ergänzt werden.
+      </p>
+      <h1>{title}</h1>
+      <slot />
+    </div>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .legal {
+    padding-block: var(--space-8) var(--space-9);
+  }
+
+  .legal__inner {
+    max-width: calc(46rem + 2 * var(--gutter));
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .legal__draft {
+    padding: var(--space-4);
+    border: 1px dashed var(--signal-ink);
+    border-radius: var(--radius-m);
+    background: #fff;
+    font-size: var(--fs-sm);
+  }
+
+  h1 {
+    font-size: var(--fs-2xl);
+  }
+
+  .legal :global(h2) {
+    font-size: var(--fs-lg);
+    margin-top: var(--space-5);
+  }
+
+  .legal :global(p),
+  .legal :global(li) {
+    max-width: 42rem;
+  }
+
+  .legal :global(ul) {
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .legal :global(.missing) {
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    background: var(--signal-soft);
+    color: var(--signal-ink);
+    font-weight: 600;
+  }
+</style>

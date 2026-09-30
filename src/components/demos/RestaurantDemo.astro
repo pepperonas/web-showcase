@@ -1,0 +1,355 @@
+---
+import DemoFrame from './DemoFrame.astro';
+
+type Diet = 'vegan' | 'vegetarisch' | 'fleisch' | 'fisch';
+const menu: { cat: string; name: string; desc: string; price: string; diet: Diet }[] = [
+  { cat: 'antipasti', name: 'Burrata', desc: 'Tomaten, Basilikum, Olivenöl', price: '12,50', diet: 'vegetarisch' },
+  { cat: 'antipasti', name: 'Vitello tonnato', desc: 'Kalbfleisch, Thunfischsauce, Kapern', price: '14,00', diet: 'fleisch' },
+  { cat: 'antipasti', name: 'Caponata', desc: 'Aubergine, Sellerie, Pinienkerne', price: '10,50', diet: 'vegan' },
+  { cat: 'primi', name: 'Tagliatelle al ragù', desc: 'Hausgemachte Pasta, Rinderragout', price: '16,50', diet: 'fleisch' },
+  { cat: 'primi', name: 'Risotto al limone', desc: 'Zitrone, Parmesan, Thymian', price: '15,00', diet: 'vegetarisch' },
+  { cat: 'primi', name: 'Spaghetti aglio e olio', desc: 'Knoblauch, Chili, Petersilie', price: '12,00', diet: 'vegan' },
+  { cat: 'secondi', name: 'Dorade', desc: 'Im Ofen gegart, Fenchel, Oliven', price: '24,00', diet: 'fisch' },
+  { cat: 'secondi', name: 'Saltimbocca', desc: 'Kalb, Salbei, Rosmarinkartoffeln', price: '23,50', diet: 'fleisch' },
+  { cat: 'dolci', name: 'Tiramisù', desc: 'Nach Familienrezept', price: '7,50', diet: 'vegetarisch' },
+  { cat: 'dolci', name: 'Sorbetto', desc: 'Zitrone oder Blutorange', price: '6,00', diet: 'vegan' },
+];
+const cats = [
+  { id: 'antipasti', label: 'Antipasti' },
+  { id: 'primi', label: 'Primi' },
+  { id: 'secondi', label: 'Secondi' },
+  { id: 'dolci', label: 'Dolci' },
+];
+const dietLabel: Record<Diet, string> = { vegan: 'vegan', vegetarisch: 'vegetarisch', fleisch: '', fisch: 'Fisch' };
+---
+
+<DemoFrame
+  id="restaurant"
+  domain="trattoria-lume.example"
+  name="Trattoria Lume"
+  views={[{ id: 'karte', label: 'Speisekarte' }, { id: 'tisch', label: 'Tisch reservieren' }]}
+>
+  <p slot="brand" class="rs-brand">Trattoria <em>Lume</em></p>
+
+  <div data-view="karte" class="rs-menu">
+    <div class="rs-controls">
+      <div class="d-chips" role="group" aria-label="Kategorie" data-rs-cats>
+        {cats.map((c, i) => (
+          <button type="button" class="d-chip" data-cat={c.id} aria-pressed={i === 0 ? 'true' : 'false'}>{c.label}</button>
+        ))}
+      </div>
+      <div class="d-chips" role="group" aria-label="Ernährung" data-rs-diet>
+        <button type="button" class="d-chip" data-diet="alle" aria-pressed="true">Alles</button>
+        <button type="button" class="d-chip" data-diet="vegetarisch" aria-pressed="false">Vegetarisch</button>
+        <button type="button" class="d-chip" data-diet="vegan" aria-pressed="false">Vegan</button>
+      </div>
+    </div>
+    <ul class="rs-list" aria-live="polite">
+      {menu.map((m) => (
+        <li data-cat={m.cat} data-diet={m.diet} hidden={m.cat !== 'antipasti'}>
+          <p class="rs-name">
+            {m.name}
+            {dietLabel[m.diet] && <span class={`rs-tag rs-tag--${m.diet}`}>{dietLabel[m.diet]}</span>}
+          </p>
+          <p class="rs-desc">{m.desc}</p>
+          <p class="rs-price">{m.price}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="d-muted" data-rs-empty hidden>In dieser Kategorie gibt es nichts passendes – bitte Filter ändern.</p>
+    <p class="d-muted">Beispielkarte und Beispielpreise in Euro.</p>
+  </div>
+
+  <div data-view="tisch" class="rs-table">
+    <div class="rs-people">
+      <p class="d-label" id="rs-people-label" tabindex="-1" data-view-focus>Personen</p>
+      <div class="rs-stepper" role="group" aria-labelledby="rs-people-label">
+        <button type="button" data-rs-minus aria-label="Eine Person weniger">−</button>
+        <output data-rs-people aria-live="polite">2</output>
+        <button type="button" data-rs-plus aria-label="Eine Person mehr">+</button>
+      </div>
+    </div>
+    <p class="d-label">Tag</p>
+    <div class="d-chips" role="group" aria-label="Tag" data-rs-days></div>
+    <p class="d-label">Uhrzeit</p>
+    <div class="d-chips" role="group" aria-label="Uhrzeit" data-rs-times></div>
+    <p class="d-muted" data-rs-hint></p>
+    <button type="button" class="d-btn" data-rs-book disabled>Reservierung simulieren</button>
+    <div class="d-sim" data-rs-result hidden tabindex="-1"></div>
+  </div>
+</DemoFrame>
+
+<script>
+  import { dl } from '../../scripts/dom';
+
+  const root = document.querySelector<HTMLElement>('[data-demo="restaurant"]');
+  if (root) {
+    // Speisekarte
+    let cat = 'antipasti';
+    let diet = 'alle';
+    const items = [...root.querySelectorAll<HTMLElement>('.rs-list li')];
+    const empty = root.querySelector<HTMLElement>('[data-rs-empty]')!;
+    const matchesDiet = (d: string) =>
+      diet === 'alle' || (diet === 'vegan' ? d === 'vegan' : d === 'vegan' || d === 'vegetarisch');
+    const applyMenu = () => {
+      let n = 0;
+      items.forEach((i) => {
+        const show = i.dataset.cat === cat && matchesDiet(i.dataset.diet!);
+        i.hidden = !show;
+        if (show) n++;
+      });
+      empty.hidden = n > 0;
+    };
+    const bindGroup = (sel: string, key: string, set: (v: string) => void) => {
+      const group = root.querySelector<HTMLElement>(sel)!;
+      group.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest<HTMLButtonElement>(`[data-${key}]`);
+        if (!b) return;
+        group.querySelectorAll(`[data-${key}]`).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        set(b.getAttribute(`data-${key}`)!);
+        applyMenu();
+      });
+    };
+    bindGroup('[data-rs-cats]', 'cat', (v) => (cat = v));
+    bindGroup('[data-rs-diet]', 'diet', (v) => (diet = v));
+
+    // Reservierung – Montag Ruhetag, Belegung als festes Beispielmuster
+    let people = 2;
+    let dayIdx = 0;
+    let time = '';
+    const out = root.querySelector<HTMLOutputElement>('[data-rs-people]')!;
+    const minus = root.querySelector<HTMLButtonElement>('[data-rs-minus]')!;
+    const plus = root.querySelector<HTMLButtonElement>('[data-rs-plus]')!;
+    const daysEl = root.querySelector<HTMLElement>('[data-rs-days]')!;
+    const timesEl = root.querySelector<HTMLElement>('[data-rs-times]')!;
+    const hint = root.querySelector<HTMLElement>('[data-rs-hint]')!;
+    const book = root.querySelector<HTMLButtonElement>('[data-rs-book]')!;
+    const result = root.querySelector<HTMLElement>('[data-rs-result]')!;
+
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+    const times = ['17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'];
+    const fmtDay = (d: Date, i: number) =>
+      i === 0 ? 'Heute' : i === 1 ? 'Morgen' : d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' });
+    const free = (d: Date, t: number) => {
+      if (d.getDay() === 1) return false;
+      const seed = (d.getDate() * 7 + t * 3) % 10;
+      return people >= 6 ? seed < 3 : seed < 7;
+    };
+
+    const renderDays = () => {
+      daysEl.innerHTML = days
+        .map((d, i) => {
+          const closed = d.getDay() === 1;
+          return `<button type="button" class="d-chip" data-day="${i}" aria-pressed="${i === dayIdx}" ${closed ? 'disabled aria-label="Montag – Ruhetag"' : ''}>${fmtDay(d, i)}</button>`;
+        })
+        .join('');
+    };
+
+    const renderTimes = () => {
+      const d = days[dayIdx];
+      let n = 0;
+      timesEl.innerHTML = times
+        .map((t, i) => {
+          const ok = free(d, i);
+          if (ok) n++;
+          return `<button type="button" class="d-chip" data-time="${t}" aria-pressed="${t === time}" ${ok ? '' : `disabled aria-label="${t} – ausgebucht"`}>${t}</button>`;
+        })
+        .join('');
+      hint.textContent = n
+        ? `${n} freie Uhrzeiten für ${people} ${people === 1 ? 'Person' : 'Personen'}.`
+        : 'An diesem Tag ist nichts mehr frei.';
+      if (!n || !timesEl.querySelector(`[data-time="${time}"]:not(:disabled)`)) time = '';
+      book.disabled = !time;
+    };
+
+    const setPeople = (n: number) => {
+      people = Math.max(1, Math.min(10, n));
+      out.textContent = String(people);
+      minus.disabled = people === 1;
+      plus.disabled = people === 10;
+      result.hidden = true;
+      renderTimes();
+    };
+    minus.addEventListener('click', () => setPeople(people - 1));
+    plus.addEventListener('click', () => setPeople(people + 1));
+
+    daysEl.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-day]');
+      if (!b || b.disabled) return;
+      dayIdx = Number(b.dataset.day);
+      time = '';
+      result.hidden = true;
+      renderDays();
+      renderTimes();
+      daysEl.querySelector<HTMLElement>(`[data-day="${dayIdx}"]`)?.focus();
+    });
+
+    timesEl.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-time]');
+      if (!b || b.disabled) return;
+      time = b.dataset.time!;
+      timesEl.querySelectorAll('[data-time]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      book.disabled = false;
+    });
+
+    book.addEventListener('click', () => {
+      result.innerHTML = `<p class="d-sim__title">Reservierungsanfrage vorbereitet</p>${dl([
+        ['Tag', days[dayIdx].toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })],
+        ['Uhrzeit', `${time} Uhr`],
+        ['Personen', people],
+      ])}<p>Es wurde kein Tisch reserviert. Im Echtbetrieb folgte eine Bestätigung per E-Mail.</p>`;
+      result.hidden = false;
+      result.focus();
+    });
+
+    if (days[0].getDay() === 1) dayIdx = 1;
+    renderDays();
+    setPeople(2);
+  }
+</script>
+
+<style>
+  [data-demo='restaurant'] {
+    --d-bg: #fbf4e8;
+    --d-fg: #2f2118;
+    --d-muted: #6d5a4b;
+    --d-line: #e6d6bf;
+    --d-accent: #a4471f;
+    --d-accent-fg: #fff;
+    --d-soft: #f4e6d1;
+  }
+
+  .rs-brand {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+  }
+
+  .rs-brand em {
+    font-style: normal;
+    font-weight: 750;
+    color: var(--d-accent);
+  }
+
+  .rs-menu,
+  .rs-table {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .rs-table {
+    justify-items: start;
+  }
+
+  .rs-controls {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .rs-list {
+    list-style: none;
+    display: grid;
+  }
+
+  .rs-list li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px dotted var(--d-line);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rs-list li:not([hidden]) {
+      animation: view-in var(--dur-mid) var(--ease-out);
+    }
+  }
+
+  .rs-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.05rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rs-tag {
+    font-family: var(--font-text);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+    border: 1px solid currentColor;
+  }
+
+  .rs-tag--vegan {
+    color: #3d5b1f;
+  }
+
+  .rs-tag--vegetarisch {
+    color: #5b5f16;
+  }
+
+  .rs-tag--fisch {
+    color: #1f4f6b;
+  }
+
+  .rs-desc {
+    grid-column: 1;
+    font-size: 0.8125rem;
+    color: var(--d-muted);
+  }
+
+  .rs-price {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rs-stepper {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--d-line);
+    border-radius: 999px;
+    background: #fff;
+  }
+
+  .rs-stepper button {
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    font-size: 1.25rem;
+    color: var(--d-accent);
+  }
+
+  .rs-stepper button:disabled {
+    color: #b9a898;
+    cursor: not-allowed;
+  }
+
+  .rs-stepper output {
+    min-width: 2rem;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rs-people .d-label:focus {
+    outline: none;
+  }
+
+  .rs-table .d-sim {
+    width: 100%;
+  }
+</style>

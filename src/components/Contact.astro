@@ -1,0 +1,387 @@
+---
+import { contact } from '../config/site';
+import { industries } from '../data/industries';
+
+const demoMode = !contact.formEndpoint;
+---
+
+<section class="contact on-dark section" id="kontakt" aria-labelledby="kontakt-title">
+  <div class="container contact__inner">
+    <div class="contact__intro" data-reveal>
+      <p class="eyebrow"><span class="eyebrow__index">06</span> Kontakt</p>
+      <h2 id="kontakt-title" class="contact__title">Lassen Sie uns über Ihren Betrieb sprechen.</h2>
+      <p class="lead">
+        Ein unverbindliches Erstgespräch genügt, um herauszufinden, wo digitale Unterstützung für Sie wirklich etwas
+        bringt – und wo nicht.
+      </p>
+      <ol class="contact__next">
+        <li><span>1</span> Sie schildern kurz Ihr Anliegen.</li>
+        <li><span>2</span> Sie erhalten einen Terminvorschlag.</li>
+        <li><span>3</span> Im Gespräch klären wir, was sinnvoll ist.</li>
+      </ol>
+      {(contact.email || contact.phone) && (
+        <ul class="contact__direct">
+          {contact.email && <li><a href={`mailto:${contact.email}`}>{contact.email}</a></li>}
+          {contact.phone && <li><a href={`tel:${contact.phone.replace(/\s/g, '')}`}>{contact.phone}</a></li>}
+        </ul>
+      )}
+    </div>
+
+    <div class="contact__card" data-reveal>
+      {demoMode && (
+        <p class="contact__demo" id="kontakt-demo-hinweis">
+          <span class="demo-badge">Demo-Modus</span>
+          Dieses Formular ist noch nicht an einen Versand angebunden. Beim Absenden werden keine Daten übertragen.
+        </p>
+      )}
+
+      <form
+        class="contact__form"
+        method="post"
+        action={contact.formEndpoint ?? undefined}
+        novalidate
+        data-contact-form
+        data-demo-mode={demoMode ? 'true' : 'false'}
+        data-endpoint={contact.formEndpoint ?? ''}
+        data-email={contact.email ?? ''}
+        aria-describedby={demoMode ? 'kontakt-demo-hinweis' : undefined}
+      >
+        <div class="contact__row">
+          <div class="field">
+            <label class="field__label" for="k-name">Name <span class="req">(Pflichtfeld)</span></label>
+            <input class="input" id="k-name" name="name" type="text" autocomplete="name" required aria-describedby="k-name-error" />
+            <p class="field__error" id="k-name-error" hidden></p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="k-email">E-Mail <span class="req">(Pflichtfeld)</span></label>
+            <input class="input" id="k-email" name="email" type="email" autocomplete="email" inputmode="email" required aria-describedby="k-email-error" />
+            <p class="field__error" id="k-email-error" hidden></p>
+          </div>
+        </div>
+
+        <div class="contact__row">
+          <div class="field">
+            <label class="field__label" for="k-firma">Unternehmen <span class="opt">(optional)</span></label>
+            <input class="input" id="k-firma" name="company" type="text" autocomplete="organization" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="k-branche">Branche <span class="opt">(optional)</span></label>
+            <select class="input" id="k-branche" name="industry">
+              <option value="">Bitte wählen</option>
+              {industries.map((i) => <option value={i.id}>{i.label}</option>)}
+              <option value="andere">Andere Branche</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="k-nachricht">Worum geht es? <span class="opt">(optional)</span></label>
+          <textarea class="input" id="k-nachricht" name="message" rows="4" aria-describedby="k-nachricht-hint"></textarea>
+          <p class="field__hint" id="k-nachricht-hint">Zum Beispiel: „Wir möchten Anfragen über die Website besser vorsortieren.“</p>
+        </div>
+
+        <p class="contact__privacy">
+          Ihre Angaben werden ausschließlich zur Bearbeitung Ihrer Anfrage verwendet. Details in der
+          <a href="/datenschutz">Datenschutzerklärung</a>.
+        </p>
+
+        <button class="btn btn--signal contact__submit" type="submit">
+          {demoMode ? 'Anfrage prüfen (Demo)' : 'Anfrage senden'}
+          <span class="btn__arrow" aria-hidden="true">→</span>
+        </button>
+
+        <div class="contact__status" data-status tabindex="-1" hidden></div>
+      </form>
+      <noscript><p class="contact__noscript">Für das Formular wird JavaScript benötigt.</p></noscript>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { esc } from '../scripts/dom';
+  import { isIndustryId } from '../data/industries';
+
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  if (form) {
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    const select = form.querySelector<HTMLSelectElement>('#k-branche')!;
+    const demoMode = form.dataset.demoMode === 'true';
+    const endpoint = form.dataset.endpoint;
+    const email = form.dataset.email;
+
+    // Vorauswahl der Branche aus Showcase-CTA oder ?branche=
+    const prefill = (id: string | null) => {
+      if (isIndustryId(id)) select.value = id;
+    };
+    prefill(new URLSearchParams(location.search).get('branche'));
+    document.querySelectorAll<HTMLAnchorElement>('[data-prefill]').forEach((a) =>
+      a.addEventListener('click', () => prefill(a.dataset.prefill ?? null)),
+    );
+
+    const rules: Record<string, (v: string) => string> = {
+      name: (v) => (v.trim().length < 2 ? 'Bitte geben Sie Ihren Namen an.' : ''),
+      email: (v) =>
+        !v.trim()
+          ? 'Bitte geben Sie Ihre E-Mail-Adresse an, damit wir antworten können.'
+          : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())
+            ? ''
+            : 'Diese E-Mail-Adresse scheint unvollständig zu sein, z. B. name@firma.de.',
+    };
+
+    const check = (input: HTMLInputElement) => {
+      const rule = rules[input.name];
+      if (!rule) return true;
+      const msg = rule(input.value);
+      const err = form.querySelector<HTMLElement>(`#${input.id}-error`)!;
+      err.textContent = msg;
+      err.hidden = !msg;
+      input.setAttribute('aria-invalid', String(Boolean(msg)));
+      return !msg;
+    };
+
+    const inputs = [...form.querySelectorAll<HTMLInputElement>('input[required]')];
+    inputs.forEach((i) => {
+      i.addEventListener('blur', () => i.value && check(i));
+      i.addEventListener('input', () => i.getAttribute('aria-invalid') === 'true' && check(i));
+    });
+
+    const showStatus = (kind: 'ok' | 'demo' | 'error', html: string) => {
+      status.className = `contact__status is-${kind}`;
+      status.innerHTML = html;
+      status.hidden = false;
+      status.focus();
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const valid = inputs.map(check).every(Boolean);
+      if (!valid) {
+        status.hidden = true;
+        form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+        return;
+      }
+      const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+
+      if (demoMode) {
+        const mail = email
+          ? `<p>Sie können Ihre Nachricht stattdessen direkt per <a href="mailto:${esc(email)}?subject=${encodeURIComponent('Projektanfrage')}&body=${encodeURIComponent(data.message ?? '')}">E-Mail senden</a>.</p>`
+          : '';
+        showStatus(
+          'demo',
+          `<p><strong>Ihre Angaben sind vollständig.</strong> Im Demo-Modus wurde jedoch nichts gesendet – die Nachricht ist nicht angekommen.</p>${mail}`,
+        );
+        return;
+      }
+
+      const submit = form.querySelector<HTMLButtonElement>('[type="submit"]')!;
+      submit.disabled = true;
+      submit.setAttribute('aria-busy', 'true');
+      try {
+        const res = await fetch(endpoint!, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        form.reset();
+        showStatus('ok', '<p><strong>Danke, Ihre Nachricht ist angekommen.</strong> Sie erhalten eine Antwort mit Terminvorschlag.</p>');
+      } catch {
+        showStatus(
+          'error',
+          `<p><strong>Das Senden hat nicht geklappt.</strong> Bitte versuchen Sie es erneut${email ? ` oder schreiben Sie an <a href="mailto:${esc(email)}">${esc(email)}</a>` : ''}.</p>`,
+        );
+      } finally {
+        submit.disabled = false;
+        submit.removeAttribute('aria-busy');
+      }
+    });
+  }
+</script>
+
+<style>
+  .contact__inner {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 64em) {
+    .contact__inner {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: var(--space-8);
+      align-items: start;
+    }
+  }
+
+  .contact__intro {
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+  }
+
+  .contact__title {
+    font-size: var(--fs-2xl);
+    max-width: 14ch;
+  }
+
+  .contact__next {
+    list-style: none;
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+
+  .contact__next li {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-weight: 500;
+  }
+
+  .contact__next span {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--on-dark-line);
+    border-radius: 50%;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--signal-on-dark);
+  }
+
+  .contact__direct {
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+    font-size: var(--fs-md);
+    font-weight: 600;
+  }
+
+  .contact__card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: var(--radius-l);
+    padding: clamp(1.25rem, 0.8rem + 2vw, 2.5rem);
+    display: grid;
+    gap: var(--space-5);
+    --text-muted: #51565f;
+    --line: #d3cdbf;
+  }
+
+  .contact__card :focus-visible {
+    outline-color: var(--signal-ink);
+  }
+
+  .contact__card .field__error {
+    color: var(--signal-ink);
+  }
+
+  .contact__card .field__error::before {
+    color: #fff;
+  }
+
+  .contact__demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px dashed var(--signal-ink);
+    border-radius: var(--radius-m);
+    font-size: var(--fs-sm);
+    background: #fff;
+  }
+
+  .contact__demo .demo-badge {
+    color: var(--signal-ink);
+  }
+
+  .contact__form {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .contact__row {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 40em) {
+    .contact__row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .req,
+  .opt {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+  }
+
+  .contact__privacy {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+
+  .contact__submit {
+    justify-self: start;
+  }
+
+  @media (max-width: 30em) {
+    .contact__submit {
+      justify-self: stretch;
+    }
+  }
+
+  .contact__status {
+    display: grid;
+    gap: 0.5rem;
+    padding: var(--space-4);
+    border-radius: var(--radius-m);
+    font-size: var(--fs-sm);
+    border-left: 4px solid;
+  }
+
+  .contact__status:focus {
+    outline: none;
+  }
+
+  .contact__status:global(.is-demo) {
+    background: #fff;
+    border-color: var(--signal-ink);
+  }
+
+  .contact__status:global(.is-ok) {
+    background: var(--ok-soft);
+    border-color: var(--ok);
+  }
+
+  .contact__status:global(.is-error) {
+    background: var(--signal-soft);
+    border-color: var(--signal-ink);
+  }
+
+  .contact__status :global(a) {
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .contact__status:not([hidden]) {
+      animation: status-in var(--dur-mid) var(--ease-out);
+    }
+  }
+
+  @keyframes status-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  .contact__noscript {
+    font-size: var(--fs-sm);
+    color: var(--signal-ink);
+  }
+</style>
