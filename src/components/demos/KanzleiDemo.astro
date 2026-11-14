@@ -57,6 +57,7 @@ const areas = [
 
 <script>
   import { dl, esc } from '../../scripts/dom';
+  import { deadlineEnd } from '../../scripts/deadline';
 
   type Topic = { id: string; label: string; deadline?: { label: string; days: number; note: string } };
   const config: Record<string, { label: string; lawyer: string; topics: Topic[] }> = {
@@ -135,15 +136,8 @@ const areas = [
       return config[area]?.topics.find((t) => t.id === id);
     };
 
-    const deadlineFor = (topic: Topic): Date | null => {
-      if (!topic.deadline || !dateInput.value) return null;
-      const d = new Date(`${dateInput.value}T12:00:00`);
-      d.setDate(d.getDate() + topic.deadline.days);
-      // Fällt das Fristende auf ein Wochenende, verschiebt es sich auf Montag.
-      if (d.getDay() === 6) d.setDate(d.getDate() + 2);
-      if (d.getDay() === 0) d.setDate(d.getDate() + 1);
-      return d;
-    };
+    const deadlineFor = (topic: Topic): Date | null =>
+      topic.deadline ? deadlineEnd(dateInput.value, topic.deadline.days) : null;
 
     const fmt = (d: Date) => d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 

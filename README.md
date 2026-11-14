@@ -17,11 +17,16 @@ npm run dev          # Entwicklung: http://localhost:4321
 npm run build        # Typecheck + Vorschau-Build (noindex)
 npm run build:prod   # Typecheck + Produktions-Build (indexierbar)
 npm run preview      # gebaute Seite lokal ausliefern
+npm test             # Unit-Tests (Node 22.18+, ohne Build und ohne Browser)
 npm run test:ui      # Browserprüfung (nach dem Build, benötigt Chromium)
 npm run assets       # Favicons, App-Icons und og.png neu erzeugen
 ```
 
 Für `test:ui` und `assets` wird ein lokales Chromium verwendet (Pfad per `CHROMIUM_PATH` anpassbar).
+
+## Tests
+
+`npm test` führt `node --test test/*.test.mjs` aus – ohne Abhängigkeiten, Node entfernt die TypeScript-Typen beim Import selbst. Geprüft werden die reine Logik der Seite: HTML-Maskierung für die Demo-Zusammenfassungen (`src/scripts/dom.ts`), die Allowlist für `?branche=` und die Vollständigkeit der Brancheninhalte (`src/data/industries.ts`, je Branche eine Demo-Komponente, Demo-Domains auf `.example`) sowie das rechnerische Fristende der Kanzlei-Demo (`src/scripts/deadline.ts`: Wochenende → Montag, Monats-/Jahreswechsel, Zeitumstellung). GitHub Actions fährt die Unit-Tests bei jedem Push; die Browserprüfung `test:ui` bleibt lokal.
 
 ## Zentrale Konfiguration
 

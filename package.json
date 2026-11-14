@@ -13,6 +13,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "assets": "node scripts/make-assets.mjs",
+    "test": "node --test test/*.test.mjs",
     "test:ui": "node scripts/ui-check.mjs"
   },
   "dependencies": {
